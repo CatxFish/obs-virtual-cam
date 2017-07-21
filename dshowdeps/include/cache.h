@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes - efines a non-MFC generic cache class.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -54,11 +54,11 @@ private:
 
 public:
 
-    CCache(TCHAR *pName,INT iItems);
+    CCache(__in_opt LPCTSTR pName,INT iItems);
     virtual ~CCache();
 
     /* Add an item to the cache */
-    CBaseObject *AddToCache(CBaseObject *pObject);
+    CBaseObject *AddToCache(__in CBaseObject *pObject);
 
     /* Remove an item from the cache */
     CBaseObject *RemoveFromCache();

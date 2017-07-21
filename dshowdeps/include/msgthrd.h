@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - provides support for a worker thread 
 //       class to which one can asynchronously post messages.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -17,7 +17,7 @@ public:
     LPVOID lpParam;
     CAMEvent *pEvent;
 
-    CMsg(UINT u, DWORD dw, LPVOID lp, CAMEvent *pEvnt)
+    CMsg(UINT u, DWORD dw, __inout_opt LPVOID lp, __in_opt CAMEvent *pEvnt)
         : uMsg(u), dwFlags(dw), lpParam(lp), pEvent(pEvnt) {}
 
     CMsg()
@@ -31,7 +31,7 @@ public:
 //
 class AM_NOVTABLE CMsgThread {
 private:
-    static DWORD WINAPI DefaultThreadProc(LPVOID lpParam);
+    static DWORD WINAPI DefaultThreadProc(__inout LPVOID lpParam);
     DWORD               m_ThreadId;
     HANDLE              m_hThread;
 
@@ -58,7 +58,7 @@ public:
     ~CMsgThread();
     // override this if you want to block on other things as well
     // as the message loop
-    void virtual GetThreadMsg(CMsg *msg);
+    void virtual GetThreadMsg(__out CMsg *msg);
 
     // override this if you want to do something on thread startup
     virtual void OnThreadInit() {
@@ -66,7 +66,7 @@ public:
 
     BOOL CreateThread();
 
-    BOOL WaitForThreadExit(LPDWORD lpdwExitCode) {
+    BOOL WaitForThreadExit(__out LPDWORD lpdwExitCode) {
         if (m_hThread != NULL) {
             WaitForSingleObject(m_hThread, INFINITE);
             return GetExitCodeThread(m_hThread, lpdwExitCode);
@@ -100,7 +100,7 @@ public:
 
 
     void PutThreadMsg(UINT uMsg, DWORD dwMsgFlags,
-                      LPVOID lpMsgParam, CAMEvent *pEvent = NULL) {
+                      __in_opt LPVOID lpMsgParam, __in_opt CAMEvent *pEvent = NULL) {
         CAutoLock lck(&m_Lock);
         CMsg* pMsg = new CMsg(uMsg, dwMsgFlags, lpMsgParam, pEvent);
         m_ThreadQueue.AddTail(pMsg);
@@ -115,6 +115,6 @@ public:
     // the creator thread.
     //
     virtual LRESULT ThreadMessageProc(
-        UINT uMsg, DWORD dwFlags, LPVOID lpParam, CAMEvent *pEvent) = 0;
+        UINT uMsg, DWORD dwFlags, __inout_opt LPVOID lpParam, __in_opt CAMEvent *pEvent) = 0;
 };
 

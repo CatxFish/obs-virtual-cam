@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - defines a generic ActiveX base renderer
 //       class.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -27,9 +27,9 @@ protected:
 
 public:
 
-    CRendererInputPin(CBaseRenderer *pRenderer,
-                      HRESULT *phr,
-                      LPCWSTR Name);
+    CRendererInputPin(__inout CBaseRenderer *pRenderer,
+                      __inout HRESULT *phr,
+                      __in_opt LPCWSTR Name);
 
     // Overriden from the base pin classes
 
@@ -42,7 +42,7 @@ public:
 
     // Add rendering behaviour to interface functions
 
-    STDMETHODIMP QueryId(LPWSTR *Id);
+    STDMETHODIMP QueryId(__deref_out LPWSTR *Id);
     STDMETHODIMP EndOfStream();
     STDMETHODIMP BeginFlush();
     STDMETHODIMP EndFlush();
@@ -97,16 +97,16 @@ protected:
 public:
 
     CBaseRenderer(REFCLSID RenderClass, // CLSID for this renderer
-                  TCHAR *pName,         // Debug ONLY description
-                  LPUNKNOWN pUnk,       // Aggregated owner object
-                  HRESULT *phr);        // General OLE return code
+                  __in_opt LPCTSTR pName,         // Debug ONLY description
+                  __inout_opt LPUNKNOWN pUnk,       // Aggregated owner object
+                  __inout HRESULT *phr);        // General OLE return code
 
     ~CBaseRenderer();
 
     // Overriden to say what interfaces we support and where
 
-    virtual HRESULT GetMediaPositionInterface(REFIID riid,void **ppv);
-    STDMETHODIMP NonDelegatingQueryInterface(REFIID, void **);
+    virtual HRESULT GetMediaPositionInterface(REFIID riid, __deref_out void **ppv);
+    STDMETHODIMP NonDelegatingQueryInterface(REFIID, __deref_out void **);
 
     virtual HRESULT SourceThreadCanWait(BOOL bCanWait);
 
@@ -145,8 +145,8 @@ public:
     STDMETHODIMP Stop();
     STDMETHODIMP Pause();
     STDMETHODIMP Run(REFERENCE_TIME StartTime);
-    STDMETHODIMP GetState(DWORD dwMSecs,FILTER_STATE *State);
-    STDMETHODIMP FindPin(LPCWSTR Id, IPin **ppPin);
+    STDMETHODIMP GetState(DWORD dwMSecs, __out FILTER_STATE *State);
+    STDMETHODIMP FindPin(LPCWSTR Id, __deref_out IPin **ppPin);
 
     // These are available for a quality management implementation
 
@@ -170,12 +170,12 @@ public:
 
     virtual BOOL ScheduleSample(IMediaSample *pMediaSample);
     virtual HRESULT GetSampleTimes(IMediaSample *pMediaSample,
-                                   REFERENCE_TIME *pStartTime,
-                                   REFERENCE_TIME *pEndTime);
+                                   __out REFERENCE_TIME *pStartTime,
+                                   __out REFERENCE_TIME *pEndTime);
 
     virtual HRESULT ShouldDrawSampleNow(IMediaSample *pMediaSample,
-                                        REFERENCE_TIME *ptrStart,
-                                        REFERENCE_TIME *ptrEnd);
+                                        __out REFERENCE_TIME *ptrStart,
+                                        __out REFERENCE_TIME *ptrEnd);
 
     // Lots of end of stream complexities
 
@@ -408,9 +408,9 @@ public:
 
 
     CBaseVideoRenderer(REFCLSID RenderClass, // CLSID for this renderer
-                       TCHAR *pName,         // Debug ONLY description
-                       LPUNKNOWN pUnk,       // Aggregated owner object
-                       HRESULT *phr);        // General OLE return code
+                       __in_opt LPCTSTR pName,         // Debug ONLY description
+                       __inout_opt LPUNKNOWN pUnk,       // Aggregated owner object
+                       __inout HRESULT *phr);        // General OLE return code
 
     ~CBaseVideoRenderer();
 
@@ -437,11 +437,11 @@ public:
     virtual HRESULT ResetStreamingTimes();
     BOOL ScheduleSample(IMediaSample *pMediaSample);
     HRESULT ShouldDrawSampleNow(IMediaSample *pMediaSample,
-                                REFERENCE_TIME *ptrStart,
-                                REFERENCE_TIME *ptrEnd);
+                                __inout REFERENCE_TIME *ptrStart,
+                                __inout REFERENCE_TIME *ptrEnd);
 
     virtual HRESULT SendQuality(REFERENCE_TIME trLate, REFERENCE_TIME trRealStream);
-    STDMETHODIMP JoinFilterGraph(IFilterGraph * pGraph, LPCWSTR pName);
+    STDMETHODIMP JoinFilterGraph(__inout_opt IFilterGraph * pGraph, __in_opt LPCWSTR pName);
 
     //
     //  Do estimates for standard deviations for per-frame
@@ -453,7 +453,7 @@ public:
     //
     HRESULT GetStdDev(
         int nSamples,
-        int *piResult,
+        __out int *piResult,
         LONGLONG llSumSq,
         LONGLONG iTot
     );
@@ -461,17 +461,17 @@ public:
 
     // IQualProp property page support
 
-    STDMETHODIMP get_FramesDroppedInRenderer(int *cFramesDropped);
-    STDMETHODIMP get_FramesDrawn(int *pcFramesDrawn);
-    STDMETHODIMP get_AvgFrameRate(int *piAvgFrameRate);
-    STDMETHODIMP get_Jitter(int *piJitter);
-    STDMETHODIMP get_AvgSyncOffset(int *piAvg);
-    STDMETHODIMP get_DevSyncOffset(int *piDev);
+    STDMETHODIMP get_FramesDroppedInRenderer(__out int *cFramesDropped);
+    STDMETHODIMP get_FramesDrawn(__out int *pcFramesDrawn);
+    STDMETHODIMP get_AvgFrameRate(__out int *piAvgFrameRate);
+    STDMETHODIMP get_Jitter(__out int *piJitter);
+    STDMETHODIMP get_AvgSyncOffset(__out int *piAvg);
+    STDMETHODIMP get_DevSyncOffset(__out int *piDev);
 
     // Implement an IUnknown interface and expose IQualProp
 
     DECLARE_IUNKNOWN
-    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid,VOID **ppv);
+    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid,__deref_out VOID **ppv);
 };
 
 #endif // __RENBASE__

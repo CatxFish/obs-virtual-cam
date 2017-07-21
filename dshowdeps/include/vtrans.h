@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes - defines a video transform class.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -15,7 +15,7 @@ class CVideoTransformFilter : public CTransformFilter
 {
   public:
 
-    CVideoTransformFilter(TCHAR *, LPUNKNOWN, REFCLSID clsid);
+    CVideoTransformFilter(__in_opt LPCTSTR, __inout_opt LPUNKNOWN, REFCLSID clsid);
     ~CVideoTransformFilter();
     HRESULT EndFlush();
 

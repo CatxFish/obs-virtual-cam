@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) 1996-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1996-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -71,15 +71,15 @@ private:
     //				expires, throw the sample away.  If the event
     //				fires, call me back - I've changed my mind.
     //
-    enum StreamControlState CheckSampleTimes( const REFERENCE_TIME * pSampleStart,
-					      const REFERENCE_TIME * pSampleStop );
+    enum StreamControlState CheckSampleTimes( __in const REFERENCE_TIME * pSampleStart,
+					      __in const REFERENCE_TIME * pSampleStop );
 
 public:
     // You don't have to tell us much when we're created, but there are other
     // obligations that must be met.  See SetSyncSource & NotifyFilterState
     // below.
     //
-    CBaseStreamControl();
+    CBaseStreamControl(__inout_opt HRESULT *phr = NULL);
     ~CBaseStreamControl();
 
     // If you want this class to work properly, there are thing you need to
@@ -134,7 +134,7 @@ public:
 			 DWORD dwCookie = 0 );
     STDMETHODIMP StartAt( const REFERENCE_TIME * ptStart = NULL,
 		    	  DWORD dwCookie = 0 );
-    STDMETHODIMP GetInfo( AM_STREAM_INFO *pInfo);
+    STDMETHODIMP GetInfo( __out AM_STREAM_INFO *pInfo);
 
     // Helper function for pin's receive method.  Call this with
     // the sample and we'll tell you what to do with it.  We'll do a

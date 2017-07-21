@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - defines classes from which simple
 //       Transform-In-Place filters may be derived.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -49,21 +49,21 @@ protected:
 public:
 
     CTransInPlaceInputPin(
-        TCHAR               *pObjectName,
-        CTransInPlaceFilter *pFilter,
-        HRESULT             *phr,
-        LPCWSTR              pName);
+        __in_opt LPCTSTR     pObjectName,
+        __inout CTransInPlaceFilter *pFilter,
+        __inout HRESULT             *phr,
+        __in_opt LPCWSTR              pName);
 
     // --- IMemInputPin -----
 
     // Provide an enumerator for media types by getting one from downstream
-    STDMETHODIMP EnumMediaTypes( IEnumMediaTypes **ppEnum );
+    STDMETHODIMP EnumMediaTypes( __deref_out IEnumMediaTypes **ppEnum );
 
     // Say whether media type is acceptable.
     HRESULT CheckMediaType(const CMediaType* pmt);
 
     // Return our upstream allocator
-    STDMETHODIMP GetAllocator(IMemAllocator ** ppAllocator);
+    STDMETHODIMP GetAllocator(__deref_out IMemAllocator ** ppAllocator);
 
     // get told which allocator the upstream output pin is actually
     // going to use.
@@ -72,11 +72,11 @@ public:
 
     // Allow the filter to see what allocator we have
     // N.B. This does NOT AddRef
-    IMemAllocator * PeekAllocator() const
+    __out IMemAllocator * PeekAllocator() const
         {  return m_pAllocator; }
 
     // Pass this on downstream if it ever gets called.
-    STDMETHODIMP GetAllocatorRequirements(ALLOCATOR_PROPERTIES *pProps);
+    STDMETHODIMP GetAllocatorRequirements(__out ALLOCATOR_PROPERTIES *pProps);
 
     HRESULT CompleteConnect(IPin *pReceivePin);
 
@@ -98,10 +98,10 @@ protected:
 public:
 
     CTransInPlaceOutputPin(
-        TCHAR               *pObjectName,
-        CTransInPlaceFilter *pFilter,
-        HRESULT             *phr,
-        LPCWSTR              pName);
+        __in_opt LPCTSTR     pObjectName,
+        __inout CTransInPlaceFilter *pFilter,
+        __inout HRESULT             *phr,
+        __in_opt LPCWSTR              pName);
 
 
     // --- CBaseOutputPin ------------
@@ -113,7 +113,7 @@ public:
     // virtual HRESULT DecideAllocator(IMemInputPin * pPin, IMemAllocator ** pAlloc);
 
     // Provide a media type enumerator.  Get it from upstream.
-    STDMETHODIMP EnumMediaTypes( IEnumMediaTypes **ppEnum );
+    STDMETHODIMP EnumMediaTypes( __deref_out IEnumMediaTypes **ppEnum );
 
     // Say whether media type is acceptable.
     HRESULT CheckMediaType(const CMediaType* pmt);
@@ -122,12 +122,12 @@ public:
     //  Also called by input pin's GetAllocator()
     void SetAllocator(IMemAllocator * pAllocator);
 
-    IMemInputPin * ConnectedIMemInputPin()
+    __out_opt IMemInputPin * ConnectedIMemInputPin()
         { return m_pInputPin; }
 
     // Allow the filter to see what allocator we have
     // N.B. This does NOT AddRef
-    IMemAllocator * PeekAllocator() const
+    __out IMemAllocator * PeekAllocator() const
         {  return m_pAllocator; }
 
     HRESULT CompleteConnect(IPin *pReceivePin);
@@ -151,10 +151,10 @@ public:
     //  not modify the data samples (for instance it's just copying
     //  them somewhere else or looking at the timestamps).
 
-    CTransInPlaceFilter(TCHAR *, LPUNKNOWN, REFCLSID clsid, HRESULT *,
+    CTransInPlaceFilter(__in_opt LPCTSTR, __inout_opt LPUNKNOWN, REFCLSID clsid, __inout HRESULT *,
                         bool bModifiesData = true);
 #ifdef UNICODE
-    CTransInPlaceFilter(CHAR *, LPUNKNOWN, REFCLSID clsid, HRESULT *,
+    CTransInPlaceFilter(__in_opt LPCSTR, __inout_opt LPUNKNOWN, REFCLSID clsid, __inout HRESULT *,
                         bool bModifiesData = true);
 #endif
     // The following are defined to avoid undefined pure virtuals.
@@ -162,13 +162,13 @@ public:
 
     // We override EnumMediaTypes to bypass the transform class enumerator
     // which would otherwise call this.
-    HRESULT GetMediaType(int iPosition, CMediaType *pMediaType)
+    HRESULT GetMediaType(int iPosition, __inout CMediaType *pMediaType)
         {   DbgBreak("CTransInPlaceFilter::GetMediaType should never be called");
             return E_UNEXPECTED;
         }
 
-    // This is called when we actually have to provide out own allocator.
-    HRESULT DecideBufferSize(IMemAllocator*, ALLOCATOR_PROPERTIES *);
+    // This is called when we actually have to provide our own allocator.
+    HRESULT DecideBufferSize(IMemAllocator*, __inout ALLOCATOR_PROPERTIES *);
 
     // The functions which call this in CTransform are overridden in this
     // class to call CheckInputType with the assumption that the type
@@ -211,7 +211,7 @@ public:
 
 protected:
 
-    IMediaSample * CTransInPlaceFilter::Copy(IMediaSample *pSource);
+    __out_opt IMediaSample * CTransInPlaceFilter::Copy(IMediaSample *pSource);
 
 #ifdef PERF
     int m_idTransInPlace;                 // performance measuring id
@@ -223,11 +223,11 @@ protected:
     friend class CTransInPlaceInputPin;
     friend class CTransInPlaceOutputPin;
 
-    CTransInPlaceInputPin  *InputPin() const
+    __out CTransInPlaceInputPin  *InputPin() const
     {
         return (CTransInPlaceInputPin *)m_pInput;
     };
-    CTransInPlaceOutputPin *OutputPin() const
+    __out CTransInPlaceOutputPin *OutputPin() const
     {
         return (CTransInPlaceOutputPin *)m_pOutput;
     };

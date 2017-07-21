@@ -5,7 +5,7 @@
 //       makes a queue of samples and sends them to an output pin.  The 
 //       class will optionally send the samples to the pin directly.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -16,7 +16,7 @@ class COutputQueue : public CCritSec
 public:
     //  Constructor
     COutputQueue(IPin      *pInputPin,          //  Pin to send stuff to
-                 HRESULT   *phr,                //  'Return code'
+                 __inout HRESULT *phr,          //  'Return code'
                  BOOL       bAuto = TRUE,       //  Ask pin if blocks
                  BOOL       bQueue = TRUE,      //  Send through queue (ignored if
                                                 //  bAuto set)
@@ -50,9 +50,9 @@ public:
 
     // do something with these media samples
     HRESULT ReceiveMultiple (
-        IMediaSample **pSamples,
+        __in_ecount(nSamples) IMediaSample **pSamples,
         long nSamples,
-        long *nSamplesProcessed);
+        __out long *nSamplesProcessed);
 
     void Reset();           // Reset m_hr ready for more data
 
@@ -63,12 +63,12 @@ public:
     void SetPopEvent(HANDLE hEvent);
 
 protected:
-    static DWORD WINAPI InitialThreadProc(LPVOID pv);
+    static DWORD WINAPI InitialThreadProc(__in LPVOID pv);
     DWORD ThreadProc();
     BOOL  IsQueued()
     {
         return m_List != NULL;
-    }
+    };
 
     //  The critical section MUST be held when this is called
     void QueueSample(IMediaSample *pSample);
@@ -76,7 +76,7 @@ protected:
     BOOL IsSpecialSample(IMediaSample *pSample)
     {
         return (DWORD_PTR)pSample > (DWORD_PTR)(LONG_PTR)(-16);
-    }
+    };
 
     //  Remove and Release() batched and queued samples
     void FreeSamples();
@@ -109,8 +109,8 @@ protected:
     HANDLE                m_hSem;
     CAMEvent                m_evFlushComplete;
     HANDLE                m_hThread;
-    IMediaSample  **      m_ppSamples;
-    LONG                  m_nBatched;
+    __field_ecount_opt(m_lBatchSize) IMediaSample  **      m_ppSamples;
+    __range(0, m_lBatchSize)         LONG                  m_nBatched;
 
     //  Wait optimization
     LONG                  m_lWaiting;
@@ -129,7 +129,7 @@ protected:
     BOOL                  m_bSendAnyway;
 
     //  Deferred 'return code'
-    BOOL volatile         m_hr;
+    HRESULT volatile         m_hr;
 
     // an event that can be fired after every deliver
     HANDLE m_hEventPop;

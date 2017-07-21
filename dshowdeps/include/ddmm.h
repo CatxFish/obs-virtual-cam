@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - efines routines for using DirectDraw 
 //       on a multimonitor system.
 //
-// Copyright (c) 1995-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1995-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -20,8 +20,8 @@ extern "C" {            /* Assume C declarations for C++ */
 typedef HRESULT (*PDRAWCREATE)(IID *,LPDIRECTDRAW *,LPUNKNOWN);
 typedef HRESULT (*PDRAWENUM)(LPDDENUMCALLBACKA, LPVOID);
 
-IDirectDraw * DirectDrawCreateFromDevice(LPSTR, PDRAWCREATE, PDRAWENUM);
-IDirectDraw * DirectDrawCreateFromDeviceEx(LPSTR, PDRAWCREATE, LPDIRECTDRAWENUMERATEEXA);
+IDirectDraw * DirectDrawCreateFromDevice(__in_opt LPSTR, PDRAWCREATE, PDRAWENUM);
+IDirectDraw * DirectDrawCreateFromDeviceEx(__in_opt LPSTR, PDRAWCREATE, LPDIRECTDRAWENUMERATEEXA);
 
 #ifdef __cplusplus
 }

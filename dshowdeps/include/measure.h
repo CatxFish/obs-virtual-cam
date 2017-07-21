@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -159,7 +159,7 @@ void WINAPI Msr_Terminate(void);
 // Call this to get an Id for an "incident" that you can pass to Start, Stop or Note
 // everything that's logged is called an "incident".
 
-int  WINAPI Msr_Register(LPTSTR Incident);
+int  WINAPI Msr_Register(__in LPTSTR Incident);
 
 
 // Reset the statistical counts for an incident

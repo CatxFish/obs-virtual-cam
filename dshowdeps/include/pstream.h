@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - defines a class for persistent properties
 //       of filters.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -61,13 +61,13 @@ class CPersistStream : public IPersistStream {
             {return (mPS_fDirty ? S_OK : S_FALSE);}  // note FALSE means clean
         STDMETHODIMP Load(LPSTREAM pStm);
         STDMETHODIMP Save(LPSTREAM pStm, BOOL fClearDirty);
-        STDMETHODIMP GetSizeMax(ULARGE_INTEGER * pcbSize)
+        STDMETHODIMP GetSizeMax(__out ULARGE_INTEGER * pcbSize)
                          // Allow 24 bytes for version.
                          { pcbSize->QuadPart = 12*sizeof(WCHAR)+SizeMax(); return NOERROR; }
 
         // implementation
 
-        CPersistStream(IUnknown *punk, HRESULT *phr);
+        CPersistStream(IUnknown *punk, __inout HRESULT *phr);
         ~CPersistStream();
 
         HRESULT SetDirty(BOOL fDirty)
@@ -80,7 +80,7 @@ class CPersistStream : public IPersistStream {
         // --- IPersist ---
 
         // You must override this to provide your own class id
-        STDMETHODIMP GetClassID(CLSID *pClsid) PURE;
+        STDMETHODIMP GetClassID(__out CLSID *pClsid) PURE;
 
         // overrideable if you want
         // file version number.  Override it if you ever change format
@@ -109,6 +109,6 @@ class CPersistStream : public IPersistStream {
 STDAPI WriteInt(IStream *pIStream, int n);
 
 // inverse of WriteInt
-STDAPI_(int) ReadInt(IStream *pIStream, HRESULT &hr);
+STDAPI_(int) ReadInt(IStream *pIStream, __out HRESULT &hr);
 
 #endif // __PSTREAM__

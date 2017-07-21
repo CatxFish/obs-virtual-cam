@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -36,11 +36,11 @@ STDAPI AMovieDllRegisterServer();
 STDAPI AMovieDllUnregisterServer();
 
 // helper functions
-STDAPI EliminateSubKey( HKEY, LPTSTR );
+STDAPI EliminateSubKey( HKEY, LPCTSTR );
 
 
 STDAPI
 AMovieSetupRegisterFilter2( const AMOVIESETUP_FILTER * const psetupdata
-                          , IFilterMapper2 *                 pIFM2
+                          , IFilterMapper2 *         pIFM2
                           , BOOL                             bRegister  );
 

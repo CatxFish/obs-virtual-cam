@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - defines classes from which simple 
 //       transform codecs may be derived.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -41,19 +41,19 @@ protected:
 public:
 
     CTransformInputPin(
-        TCHAR *pObjectName,
-        CTransformFilter *pTransformFilter,
-        HRESULT * phr,
-        LPCWSTR pName);
+        __in_opt LPCTSTR pObjectName,
+        __inout CTransformFilter *pTransformFilter,
+        __inout HRESULT * phr,
+        __in_opt LPCWSTR pName);
 #ifdef UNICODE
     CTransformInputPin(
-        char *pObjectName,
-        CTransformFilter *pTransformFilter,
-        HRESULT * phr,
-        LPCWSTR pName);
+        __in_opt LPCSTR pObjectName,
+        __inout CTransformFilter *pTransformFilter,
+        __inout HRESULT * phr,
+        __in_opt LPCWSTR pName);
 #endif
 
-    STDMETHODIMP QueryId(LPWSTR * Id)
+    STDMETHODIMP QueryId(__deref_out LPWSTR * Id)
     {
         return AMGetWideString(L"In", Id);
     }
@@ -118,25 +118,25 @@ public:
     IUnknown * m_pPosition;
 
     CTransformOutputPin(
-        TCHAR *pObjectName,
-        CTransformFilter *pTransformFilter,
-        HRESULT * phr,
-        LPCWSTR pName);
+        __in_opt LPCTSTR pObjectName,
+        __inout CTransformFilter *pTransformFilter,
+        __inout HRESULT * phr,
+        __in_opt LPCWSTR pName);
 #ifdef UNICODE
     CTransformOutputPin(
-        CHAR *pObjectName,
-        CTransformFilter *pTransformFilter,
-        HRESULT * phr,
-        LPCWSTR pName);
+        __in_opt LPCSTR pObjectName,
+        __inout CTransformFilter *pTransformFilter,
+        __inout HRESULT * phr,
+        __in_opt LPCWSTR pName);
 #endif
     ~CTransformOutputPin();
 
     // override to expose IMediaPosition
-    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
+    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv);
 
     // --- CBaseOutputPin ------------
 
-    STDMETHODIMP QueryId(LPWSTR * Id)
+    STDMETHODIMP QueryId(__deref_out LPWSTR * Id)
     {
         return AMGetWideString(L"Out", Id);
     }
@@ -157,10 +157,10 @@ public:
     // the count and size of buffers we need.
     HRESULT DecideBufferSize(
                 IMemAllocator * pAlloc,
-                ALLOCATOR_PROPERTIES *pProp);
+                __inout ALLOCATOR_PROPERTIES *pProp);
 
     // returns the preferred formats for a pin
-    HRESULT GetMediaType(int iPosition,CMediaType *pMediaType);
+    HRESULT GetMediaType(int iPosition, __inout CMediaType *pMediaType);
 
     // inherited from IQualityControl via CBasePin
     STDMETHODIMP Notify(IBaseFilter * pSender, Quality q);
@@ -181,7 +181,7 @@ public:
 
     virtual int GetPinCount();
     virtual CBasePin * GetPin(int n);
-    STDMETHODIMP FindPin(LPCWSTR Id, IPin **ppPin);
+    STDMETHODIMP FindPin(LPCWSTR Id, __deref_out IPin **ppPin);
 
     // override state changes to allow derived transform filter
     // to control streaming start/stop
@@ -190,9 +190,9 @@ public:
 
 public:
 
-    CTransformFilter(TCHAR *, LPUNKNOWN, REFCLSID clsid);
+    CTransformFilter(__in_opt LPCTSTR , __inout_opt LPUNKNOWN, REFCLSID clsid);
 #ifdef UNICODE
-    CTransformFilter(CHAR *, LPUNKNOWN, REFCLSID clsid);
+    CTransformFilter(__in_opt LPCSTR , __inout_opt LPUNKNOWN, REFCLSID clsid);
 #endif
     ~CTransformFilter();
 
@@ -211,15 +211,15 @@ public:
     virtual HRESULT CheckTransform(const CMediaType* mtIn, const CMediaType* mtOut) PURE;
 
     // this goes in the factory template table to create new instances
-    // static CCOMObject * CreateInstance(LPUNKNOWN, HRESULT *);
+    // static CCOMObject * CreateInstance(__inout_opt LPUNKNOWN, HRESULT *);
 
     // call the SetProperties function with appropriate arguments
     virtual HRESULT DecideBufferSize(
                         IMemAllocator * pAllocator,
-                        ALLOCATOR_PROPERTIES *pprop) PURE;
+                        __inout ALLOCATOR_PROPERTIES *pprop) PURE;
 
     // override to suggest OUTPUT pin media types
-    virtual HRESULT GetMediaType(int iPosition, CMediaType *pMediaType) PURE;
+    virtual HRESULT GetMediaType(int iPosition, __inout CMediaType *pMediaType) PURE;
 
 
 
@@ -246,7 +246,7 @@ public:
     virtual HRESULT Receive(IMediaSample *pSample);
 
     // Standard setup for output sample
-    HRESULT InitializeOutputSample(IMediaSample *pSample, IMediaSample **ppOutSample);
+    HRESULT InitializeOutputSample(IMediaSample *pSample, __deref_out IMediaSample **ppOutSample);
 
     // if you override Receive, you may need to override these three too
     virtual HRESULT EndOfStream(void);

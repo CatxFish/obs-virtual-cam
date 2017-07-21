@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - defines a class that holds and manages
 //       media type information.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -22,8 +22,8 @@ public:
     ~CMediaType();
     CMediaType();
     CMediaType(const GUID * majortype);
-    CMediaType(const AM_MEDIA_TYPE&, HRESULT* phr = NULL);
-    CMediaType(const CMediaType&, HRESULT* phr = NULL);
+    CMediaType(const AM_MEDIA_TYPE&, __out_opt HRESULT* phr = NULL);
+    CMediaType(const CMediaType&, __out_opt HRESULT* phr = NULL);
 
     CMediaType& operator=(const CMediaType&);
     CMediaType& operator=(const AM_MEDIA_TYPE&);
@@ -57,7 +57,7 @@ public:
 
     void SetFormatType(const GUID *);
     const GUID *FormatType() const {return &formattype; };
-    BOOL SetFormat(BYTE *pFormat, ULONG length);
+    BOOL SetFormat(__in_bcount(length) BYTE *pFormat, ULONG length);
     void ResetFormatBuffer();
     BYTE* AllocFormatBuffer(ULONG length);
     BYTE* ReallocFormatBuffer(ULONG length);
@@ -73,16 +73,16 @@ public:
    structure which is useful when using the IEnumMediaFormats interface as
    the implementation allocates the structures which you must later delete */
 
-void WINAPI DeleteMediaType(AM_MEDIA_TYPE *pmt);
+void WINAPI DeleteMediaType(__inout_opt AM_MEDIA_TYPE *pmt);
 AM_MEDIA_TYPE * WINAPI CreateMediaType(AM_MEDIA_TYPE const *pSrc);
-HRESULT WINAPI CopyMediaType(AM_MEDIA_TYPE *pmtTarget, const AM_MEDIA_TYPE *pmtSource);
-void WINAPI FreeMediaType(AM_MEDIA_TYPE& mt);
+HRESULT WINAPI CopyMediaType(__out AM_MEDIA_TYPE *pmtTarget, const AM_MEDIA_TYPE *pmtSource);
+void WINAPI FreeMediaType(__inout AM_MEDIA_TYPE& mt);
 
 //  Initialize a media type from a WAVEFORMATEX
 
 STDAPI CreateAudioMediaType(
     const WAVEFORMATEX *pwfx,
-    AM_MEDIA_TYPE *pmt,
+    __out AM_MEDIA_TYPE *pmt,
     BOOL bSetFormat);
 
 #endif /* __MTYPE__ */

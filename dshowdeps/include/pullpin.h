@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes - defines CPullPin class.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -57,7 +57,7 @@ class CPullPin : public CAMThread
 
     // called from ProcessAsync to queue and collect requests
     HRESULT QueueSample(
-		REFERENCE_TIME& tCurrent,
+		__inout REFERENCE_TIME& tCurrent,
 		REFERENCE_TIME tAlignStop,
 		BOOL bDiscontinuity);
 
@@ -95,14 +95,14 @@ public:
     // but no error occurs if it can't be met.
     virtual HRESULT DecideAllocator(
 		IMemAllocator* pAlloc,
-		ALLOCATOR_PROPERTIES * pProps);
+		__inout_opt ALLOCATOR_PROPERTIES * pProps);
 
     // set start and stop position. if active, will start immediately at
     // the new position. Default is 0 to duration
     HRESULT Seek(REFERENCE_TIME tStart, REFERENCE_TIME tStop);
 
     // return the total duration
-    HRESULT Duration(REFERENCE_TIME* ptDuration);
+    HRESULT Duration(__out REFERENCE_TIME* ptDuration);
 
     // start pulling data
     HRESULT Active(void);

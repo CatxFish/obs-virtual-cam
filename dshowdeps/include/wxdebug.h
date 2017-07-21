@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes - provides debugging facilities.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -64,8 +64,8 @@ enum {  CDISP_HEX = 0x01,
 // we have registered so that we can dump a list of remaining objects
 
 typedef struct tag_ObjectDesc {
-    const CHAR *m_szName;
-    const WCHAR *m_wszName;
+    LPCSTR m_szName;
+    LPCWSTR m_wszName;
     DWORD m_dwCookie;
     tag_ObjectDesc *m_pNext;
 } ObjectDesc;
@@ -84,7 +84,7 @@ typedef struct tag_ObjectDesc {
     void WINAPI DbgInitModuleSettings(bool fTakeMax);
     void WINAPI DbgInitModuleName();
     DWORD WINAPI DbgRegisterObjectCreation(
-        const CHAR *szObjectName, const WCHAR *wszObjectName);
+        LPCSTR szObjectName, LPCWSTR wszObjectName);
 
     BOOL WINAPI DbgRegisterObjectDestruction(DWORD dwCookie);
 
@@ -103,30 +103,30 @@ typedef struct tag_ObjectDesc {
 
     // Display error and logging to the user
 
-    void WINAPI DbgAssert(const TCHAR *pCondition,const TCHAR *pFileName,INT iLine);
-    void WINAPI DbgBreakPoint(const TCHAR *pCondition,const TCHAR *pFileName,INT iLine);
-    void WINAPI DbgBreakPoint(const TCHAR *pFileName,INT iLine,const TCHAR* szFormatString,...);
+    void WINAPI DbgAssert(LPCTSTR pCondition,LPCTSTR pFileName,INT iLine);
+    void WINAPI DbgBreakPoint(LPCTSTR pCondition,LPCTSTR pFileName,INT iLine);
+    void WINAPI DbgBreakPoint(LPCTSTR pFileName,INT iLine,__format_string LPCTSTR  szFormatString,...);
 
-    void WINAPI DbgKernelAssert(const TCHAR *pCondition,const TCHAR *pFileName,INT iLine);
-    void WINAPI DbgLogInfo(DWORD Type,DWORD Level,const TCHAR *pFormat,...);
+    void WINAPI DbgKernelAssert(LPCTSTR pCondition,LPCTSTR pFileName,INT iLine);
+    void WINAPI DbgLogInfo(DWORD Type,DWORD Level,__format_string LPCTSTR pFormat,...);
 #ifdef UNICODE
-    void WINAPI DbgLogInfo(DWORD Type,DWORD Level,const CHAR *pFormat,...);
-    void WINAPI DbgAssert(const CHAR *pCondition,const CHAR *pFileName,INT iLine);
-    void WINAPI DbgBreakPoint(const CHAR *pCondition,const CHAR *pFileName,INT iLine);
-    void WINAPI DbgKernelAssert(const CHAR *pCondition,const CHAR *pFileName,INT iLine);
+    void WINAPI DbgLogInfo(DWORD Type,DWORD Level,__format_string LPCSTR pFormat,...);
+    void WINAPI DbgAssert(LPCSTR pCondition,LPCSTR pFileName,INT iLine);
+    void WINAPI DbgBreakPoint(LPCSTR pCondition,LPCSTR pFileName,INT iLine);
+    void WINAPI DbgKernelAssert(LPCSTR pCondition,LPCSTR pFileName,INT iLine);
 #endif
     void WINAPI DbgOutString(LPCTSTR psz);
 
     //  Debug infinite wait stuff
     DWORD WINAPI DbgWaitForSingleObject(HANDLE h);
     DWORD WINAPI DbgWaitForMultipleObjects(DWORD nCount,
-                                    CONST HANDLE *lpHandles,
+                                    __in_ecount(nCount) CONST HANDLE *lpHandles,
                                     BOOL bWaitAll);
     void WINAPI DbgSetWaitTimeout(DWORD dwTimeout);
 
 #ifdef __strmif_h__
     // Display a media type: Terse at level 2, verbose at level 5
-    void WINAPI DisplayType(LPTSTR label, const AM_MEDIA_TYPE *pmtIn);
+    void WINAPI DisplayType(LPCTSTR label, const AM_MEDIA_TYPE *pmtIn);
 
     // Dump lots of information about a filter graph
     void WINAPI DumpGraph(IFilterGraph *pGraph, DWORD dwLevel);
@@ -176,7 +176,7 @@ typedef struct tag_ObjectDesc {
     // (public entry points compile to nothing) so if you go trying to call
     // any of the private entry points in your source they won't compile
 
-    #define NAME(_x_) ((TCHAR *) NULL)
+    #define NAME(_x_) ((LPTSTR) NULL)
 
     #define DbgInitialise(hInst)
     #define DbgTerminate()
@@ -236,46 +236,12 @@ typedef struct tag_ObjectDesc {
 //       CheckPointer(pBar,FALSE)
 //   }
 
-// These validate pointers when symbol VFWROBUST is defined
-// This will normally be defined in debug not retail builds
-
-#ifdef DEBUG
-    #define VFWROBUST
-#endif
-
-#ifdef VFWROBUST
-
-    #define ValidateReadPtr(p,cb) \
-        {if(IsBadReadPtr((PVOID)p,cb) == TRUE) \
-            DbgBreak("Invalid read pointer");}
-
-    #define ValidateWritePtr(p,cb) \
-        {if(IsBadWritePtr((PVOID)p,cb) == TRUE) \
-            DbgBreak("Invalid write pointer");}
-
-    #define ValidateReadWritePtr(p,cb) \
-        {ValidateReadPtr(p,cb) ValidateWritePtr(p,cb)}
-
-    #define ValidateStringPtr(p) \
-        {if(IsBadStringPtr((LPCTSTR)p,INFINITE) == TRUE) \
-            DbgBreak("Invalid string pointer");}
-
-    #define ValidateStringPtrA(p) \
-        {if(IsBadStringPtrA((LPCSTR)p,INFINITE) == TRUE) \
-            DbgBreak("Invalid ANSI string pointer");}
-
-    #define ValidateStringPtrW(p) \
-        {if(IsBadStringPtrW((LPCWSTR)p,INFINITE) == TRUE) \
-            DbgBreak("Invalid UNICODE string pointer");}
-
-#else
-    #define ValidateReadPtr(p,cb) 0
-    #define ValidateWritePtr(p,cb) 0
-    #define ValidateReadWritePtr(p,cb) 0
-    #define ValidateStringPtr(p) 0
-    #define ValidateStringPtrA(p) 0
-    #define ValidateStringPtrW(p) 0
-#endif
+#define ValidateReadPtr(p,cb) 0
+#define ValidateWritePtr(p,cb) 0
+#define ValidateReadWritePtr(p,cb) 0
+#define ValidateStringPtr(p) 0
+#define ValidateStringPtrA(p) 0
+#define ValidateStringPtrW(p) 0
 
 
 #ifdef _OBJBASE_H_
@@ -351,27 +317,41 @@ public:
     };
 };
 
- 
+
 #if defined(DEBUG)
 class CAutoTrace
 {
 private:
-    const TCHAR* _szBlkName;
+    LPCTSTR  _szBlkName;
     const int _level;
     static const TCHAR _szEntering[];
     static const TCHAR _szLeaving[];
 public:
-    CAutoTrace(const TCHAR* szBlkName, const int level = 15)
+    CAutoTrace(LPCTSTR szBlkName, const int level = 15)
         : _szBlkName(szBlkName), _level(level)
     {DbgLog((LOG_TRACE, _level, _szEntering, _szBlkName));}
- 
+
     ~CAutoTrace()
     {DbgLog((LOG_TRACE, _level, _szLeaving, _szBlkName));}
 };
- 
-#define AMTRACE(_x_) CAutoTrace __trace _x_
+
+#if defined (__FUNCTION__)
+
+#define AMTRACEFN()  CAutoTrace __trace(TEXT(__FUNCTION__))
+#define AMTRACE(_x_) CAutoTrace __trace(TEXT(__FUNCTION__))
+
 #else
+
+#define AMTRACE(_x_) CAutoTrace __trace _x_
+#define AMTRACEFN()
+
+#endif
+
+#else
+
 #define AMTRACE(_x_)
+#define AMTRACEFN()
+
 #endif
 
 #endif // __WXDEBUG__

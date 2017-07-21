@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes - defines generic handler classes.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -135,9 +135,9 @@ public:
     // Must be overriden to return class and window styles
 
     virtual LPTSTR GetClassWindowStyles(
-                            DWORD *pClassStyles,          // Class styles
-                            DWORD *pWindowStyles,         // Window styles
-                            DWORD *pWindowStylesEx) PURE; // Extended styles
+                            __out DWORD *pClassStyles,          // Class styles
+                            __out DWORD *pWindowStyles,         // Window styles
+                            __out DWORD *pWindowStylesEx) PURE; // Extended styles
 };
 
 
@@ -180,22 +180,22 @@ protected:
     void SlowRender(IMediaSample *pMediaSample);
     void FastRender(IMediaSample *pMediaSample);
     void DisplaySampleTimes(IMediaSample *pSample);
-    void UpdateColourTable(HDC hdc,BITMAPINFOHEADER *pbmi);
+    void UpdateColourTable(HDC hdc,__in BITMAPINFOHEADER *pbmi);
     void SetStretchMode();
 
 public:
 
     // Used to control the image drawing
 
-    CDrawImage(CBaseWindow *pBaseWindow);
+    CDrawImage(__inout CBaseWindow *pBaseWindow);
     BOOL DrawImage(IMediaSample *pMediaSample);
     BOOL DrawVideoImageHere(HDC hdc, IMediaSample *pMediaSample,
-                            LPRECT lprcSrc, LPRECT lprcDst);
+                            __in LPRECT lprcSrc, __in LPRECT lprcDst);
     void SetDrawContext();
-    void SetTargetRect(RECT *pTargetRect);
-    void SetSourceRect(RECT *pSourceRect);
-    void GetTargetRect(RECT *pTargetRect);
-    void GetSourceRect(RECT *pSourceRect);
+    void SetTargetRect(__in RECT *pTargetRect);
+    void SetSourceRect(__in RECT *pSourceRect);
+    void GetTargetRect(__out RECT *pTargetRect);
+    void GetSourceRect(__out RECT *pSourceRect);
     virtual RECT ScaleSourceRect(const RECT *pSource);
 
     // Handle updating palettes as they change
@@ -207,7 +207,7 @@ public:
     // Tell us media types and allocator assignments
 
     void NotifyAllocator(BOOL bUsingImageAllocator);
-    void NotifyMediaType(CMediaType *pMediaType);
+    void NotifyMediaType(__in CMediaType *pMediaType);
     BOOL UsingImageAllocator();
 
     // Called when we are about to draw an image
@@ -256,16 +256,16 @@ public:
 
     // Constructor
 
-    CImageSample(CBaseAllocator *pAllocator,
-                 TCHAR *pName,
-                 HRESULT *phr,
-                 LPBYTE pBuffer,
+    CImageSample(__inout CBaseAllocator *pAllocator,
+                 __in_opt LPCTSTR pName,
+                 __inout HRESULT *phr,
+                 __in_bcount(length) LPBYTE pBuffer,
                  LONG length);
 
     // Maintain the DIB/DirectDraw state
 
-    void SetDIBData(DIBDATA *pDibData);
-    DIBDATA *GetDIBData();
+    void SetDIBData(__in DIBDATA *pDibData);
+    __out DIBDATA *GetDIBData();
 };
 
 
@@ -291,27 +291,27 @@ protected:
     // Manage the shared DIBSECTION and DCI/DirectDraw buffers
 
     HRESULT CreateDIB(LONG InSize,DIBDATA &DibData);
-    STDMETHODIMP CheckSizes(ALLOCATOR_PROPERTIES *pRequest);
-    virtual CImageSample *CreateImageSample(LPBYTE pData,LONG Length);
+    STDMETHODIMP CheckSizes(__in ALLOCATOR_PROPERTIES *pRequest);
+    virtual CImageSample *CreateImageSample(__in_bcount(Length) LPBYTE pData,LONG Length);
 
 public:
 
     // Constructor and destructor
 
-    CImageAllocator(CBaseFilter *pFilter,TCHAR *pName,HRESULT *phr);
+    CImageAllocator(__inout CBaseFilter *pFilter,__in_opt LPCTSTR pName,__inout HRESULT *phr);
 #ifdef DEBUG
     ~CImageAllocator();
 #endif
 
     STDMETHODIMP_(ULONG) NonDelegatingAddRef();
     STDMETHODIMP_(ULONG) NonDelegatingRelease();
-    void NotifyMediaType(CMediaType *pMediaType);
+    void NotifyMediaType(__in CMediaType *pMediaType);
 
     // Agree the number of buffers to be used and their size
 
     STDMETHODIMP SetProperties(
-        ALLOCATOR_PROPERTIES *pRequest,
-        ALLOCATOR_PROPERTIES *pActual);
+        __in ALLOCATOR_PROPERTIES *pRequest,
+        __out ALLOCATOR_PROPERTIES *pActual);
 };
 
 
@@ -335,22 +335,22 @@ protected:
 
 public:
 
-    CImagePalette(CBaseFilter *pBaseFilter,
-                  CBaseWindow *pBaseWindow,
-                  CDrawImage *pDrawImage);
+    CImagePalette(__inout CBaseFilter *pBaseFilter,
+                  __inout CBaseWindow *pBaseWindow,
+                  __inout CDrawImage *pDrawImage);
 
 #ifdef DEBUG
     virtual ~CImagePalette();
 #endif
 
-    static HPALETTE MakePalette(const VIDEOINFOHEADER *pVideoInfo, LPSTR szDevice);
+    static HPALETTE MakePalette(const VIDEOINFOHEADER *pVideoInfo, __in LPSTR szDevice);
     HRESULT RemovePalette();
-    static HRESULT MakeIdentityPalette(PALETTEENTRY *pEntry,INT iColours, LPSTR szDevice);
-    HRESULT CopyPalette(const CMediaType *pSrc,CMediaType *pDest);
+    static HRESULT MakeIdentityPalette(__inout_ecount_full(iColours) PALETTEENTRY *pEntry,INT iColours, __in LPSTR szDevice);
+    HRESULT CopyPalette(const CMediaType *pSrc,__out CMediaType *pDest);
     BOOL ShouldUpdate(const VIDEOINFOHEADER *pNewInfo,const VIDEOINFOHEADER *pOldInfo);
-    HRESULT PreparePalette(const CMediaType *pmtNew,const CMediaType *pmtOld,LPSTR szDevice);
+    HRESULT PreparePalette(const CMediaType *pmtNew,const CMediaType *pmtOld,__in LPSTR szDevice);
 
-    BOOL DrawVideoImageHere(HDC hdc, IMediaSample *pMediaSample, LPRECT lprcSrc, LPRECT lprcDst)
+    BOOL DrawVideoImageHere(HDC hdc, IMediaSample *pMediaSample, __in LPRECT lprcSrc, __in LPRECT lprcDst)
     {
         return m_pDrawImage->DrawVideoImageHere(hdc, pMediaSample, lprcSrc,lprcDst);
     }
@@ -388,7 +388,7 @@ public:
     // Used to manage BITMAPINFOHEADERs and the display format
 
     const VIDEOINFO *GetDisplayFormat();
-    HRESULT RefreshDisplayType(LPSTR szDeviceName);
+    HRESULT RefreshDisplayType(__in_opt LPSTR szDeviceName);
     static BOOL CheckHeaderValidity(const VIDEOINFO *pInput);
     static BOOL CheckPaletteHeader(const VIDEOINFO *pInput);
     BOOL IsPalettised();
@@ -398,16 +398,22 @@ public:
 
     HRESULT CheckMediaType(const CMediaType *pmtIn);
     HRESULT CheckVideoType(const VIDEOINFO *pInput);
-    HRESULT UpdateFormat(VIDEOINFO *pVideoInfo);
+    HRESULT UpdateFormat(__inout VIDEOINFO *pVideoInfo);
     const DWORD *GetBitMasks(const VIDEOINFO *pVideoInfo);
 
-    BOOL GetColourMask(DWORD *pMaskRed,
-                       DWORD *pMaskGreen,
-                       DWORD *pMaskBlue);
+    BOOL GetColourMask(__out DWORD *pMaskRed,
+                       __out DWORD *pMaskGreen,
+                       __out DWORD *pMaskBlue);
 };
 
 //  Convert a FORMAT_VideoInfo to FORMAT_VideoInfo2
-STDAPI ConvertVideoInfoToVideoInfo2(AM_MEDIA_TYPE *pmt);
+STDAPI ConvertVideoInfoToVideoInfo2(__inout AM_MEDIA_TYPE *pmt);
+
+//  Check a media type containing VIDEOINFOHEADER
+STDAPI CheckVideoInfoType(const AM_MEDIA_TYPE *pmt);
+
+//  Check a media type containing VIDEOINFOHEADER
+STDAPI CheckVideoInfo2Type(const AM_MEDIA_TYPE *pmt);
 
 #endif // __WINUTIL__
 

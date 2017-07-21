@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -22,17 +22,17 @@ class CRenderedInputPin : public CBaseInputPin
 {
 public:
 
-    CRenderedInputPin(TCHAR *pObjectName,
-                      CBaseFilter *pFilter,
-                      CCritSec *pLock,
-                      HRESULT *phr,
-                      LPCWSTR pName);
+    CRenderedInputPin(__in_opt LPCTSTR pObjectName,
+                      __in CBaseFilter *pFilter,
+                      __in CCritSec *pLock,
+                      __inout HRESULT *phr,
+                      __in_opt LPCWSTR pName);
 #ifdef UNICODE
-    CRenderedInputPin(CHAR *pObjectName,
-                      CBaseFilter *pFilter,
-                      CCritSec *pLock,
-                      HRESULT *phr,
-                      LPCWSTR pName);
+    CRenderedInputPin(__in_opt LPCSTR pObjectName,
+                      __in CBaseFilter *pFilter,
+                      __in CCritSec *pLock,
+                      __inout HRESULT *phr,
+                      __in_opt LPCWSTR pName);
 #endif
     
     // Override methods to track end of stream state

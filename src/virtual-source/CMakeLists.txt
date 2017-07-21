@@ -7,6 +7,7 @@ set(virtualsource_SOURCES
 	dllmain.cpp
 	virtual-cam.cpp
 	virtual-audio.cpp
+	virtua-source.def
 	../queue/share_queue.cpp
 	)
 
@@ -33,15 +34,20 @@ add_library(obs-virtualsource MODULE
 include_directories(
 	${FFMPEG_INCLUDE_DIRS}
 	${DShowPath})
+	
+SET(DSHOW_LIBRARY optimized ${DShowLib} debug ${DShowLibD})	
 		
 target_link_libraries(obs-virtualsource
 	${FFMPEG_LIBRARIES}
-	${DShowLibD}
+	${DSHOW_LIBRARY}
 	winmm
 	Strmiids
 	)
 	
-add_definitions(-DDEBUG)
+if(MSVC)
+  set(CMAKE_EXE_LINKER_FLAGS
+      "${CMAKE_EXE_LINKER_FLAGS} /DEF:virtua-source.def /NODEFAULTLIB")
+endif()
 SET(CMAKE_MODULE_LINKER_FLAGS_DEBUG "${CMAKE_MODULE_LINKER_FLAGS_DEBUG} /SAFESEH:NO")
 SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} /SAFESEH:NO")
 	

@@ -5,7 +5,7 @@
 //       ActiveX source filters that support continuous generation of data.
 //       No support is provided for IMediaControl or IMediaPosition.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -43,11 +43,11 @@ class CSourceStream;  // The class that will handle each pin
 class CSource : public CBaseFilter {
 public:
 
-    CSource(TCHAR *pName, LPUNKNOWN lpunk, CLSID clsid, HRESULT *phr);
-    CSource(TCHAR *pName, LPUNKNOWN lpunk, CLSID clsid);
+    CSource(__in_opt LPCTSTR pName, __inout_opt LPUNKNOWN lpunk, CLSID clsid, __inout HRESULT *phr);
+    CSource(__in_opt LPCTSTR pName, __inout_opt LPUNKNOWN lpunk, CLSID clsid);
 #ifdef UNICODE
-    CSource(CHAR *pName, LPUNKNOWN lpunk, CLSID clsid, HRESULT *phr);
-    CSource(CHAR *pName, LPUNKNOWN lpunk, CLSID clsid);
+    CSource(__in_opt LPCSTR pName, __inout_opt LPUNKNOWN lpunk, CLSID clsid, __inout HRESULT *phr);
+    CSource(__in_opt LPCSTR pName, __inout_opt LPUNKNOWN lpunk, CLSID clsid);
 #endif
     ~CSource();
 
@@ -58,15 +58,15 @@ public:
 
     CCritSec*	pStateLock(void) { return &m_cStateLock; }	// provide our critical section
 
-    HRESULT     AddPin(CSourceStream *);
-    HRESULT     RemovePin(CSourceStream *);
+    HRESULT     AddPin(__in CSourceStream *);
+    HRESULT     RemovePin(__in CSourceStream *);
 
     STDMETHODIMP FindPin(
         LPCWSTR Id,
-        IPin ** ppPin
+        __deref_out IPin ** ppPin
     );
 
-    int FindPinNumber(IPin *iPin);
+    int FindPinNumber(__in IPin *iPin);
     
 protected:
 
@@ -88,15 +88,15 @@ protected:
 class CSourceStream : public CAMThread, public CBaseOutputPin {
 public:
 
-    CSourceStream(TCHAR *pObjectName,
-                  HRESULT *phr,
-                  CSource *pms,
-                  LPCWSTR pName);
+    CSourceStream(__in_opt LPCTSTR pObjectName,
+                  __inout HRESULT *phr,
+                  __inout CSource *pms,
+                  __in_opt LPCWSTR pName);
 #ifdef UNICODE
-    CSourceStream(CHAR *pObjectName,
-                  HRESULT *phr,
-                  CSource *pms,
-                  LPCWSTR pName);
+    CSourceStream(__in_opt LPCSTR pObjectName,
+                  __inout HRESULT *phr,
+                  __inout CSource *pms,
+                  __in_opt LPCWSTR pName);
 #endif
     virtual ~CSourceStream(void);  // virtual destructor ensures derived class destructors are called too.
 
@@ -155,16 +155,16 @@ protected:
 
     // If you support more than one media type then override these 2 functions
     virtual HRESULT CheckMediaType(const CMediaType *pMediaType);
-    virtual HRESULT GetMediaType(int iPosition, CMediaType *pMediaType);  // List pos. 0-n
+    virtual HRESULT GetMediaType(int iPosition, __inout CMediaType *pMediaType);  // List pos. 0-n
 
     // If you support only one type then override this fn.
     // This will only be called by the default implementations
     // of CheckMediaType and GetMediaType(int, CMediaType*)
     // You must override this fn. or the above 2!
-    virtual HRESULT GetMediaType(CMediaType *pMediaType) {return E_UNEXPECTED;}
+    virtual HRESULT GetMediaType(__inout CMediaType *pMediaType) {return E_UNEXPECTED;}
 
     STDMETHODIMP QueryId(
-        LPWSTR * Id
+        __deref_out LPWSTR * Id
     );
 };
 

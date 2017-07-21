@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - defines helper classes and functions for
 //       building multimedia filters.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -116,7 +116,8 @@ class CAMEvent
 protected:
     HANDLE m_hEvent;
 public:
-    CAMEvent(BOOL fManualReset = FALSE);
+    CAMEvent(BOOL fManualReset = FALSE, __inout_opt HRESULT *phr = NULL);
+    CAMEvent(__inout_opt HRESULT *phr);
     ~CAMEvent();
 
     // Cast to HANDLE - we don't support this as an lvalue
@@ -140,6 +141,8 @@ class CAMMsgEvent : public CAMEvent
 
 public:
 
+    CAMMsgEvent(__inout_opt HRESULT *phr = NULL);
+
     // Allow SEND messages to be processed while waiting
     BOOL WaitMsg(DWORD dwTimeout = INFINITE);
 };
@@ -149,6 +152,7 @@ public:
 
 // support for a worker thread
 
+#ifdef AM_NOVTABLE
 // simple thread class supports creation of worker thread, synchronization
 // and communication. Can be derived to simplify parameter passing
 class AM_NOVTABLE CAMThread {
@@ -172,7 +176,7 @@ protected:
     virtual DWORD ThreadProc() = 0;
 
 public:
-    CAMThread();
+    CAMThread(__inout_opt HRESULT *phr = NULL);
     virtual ~CAMThread();
 
     CCritSec m_AccessLock;	// locks access by client threads
@@ -180,7 +184,7 @@ public:
 
     // thread initially runs this. param is actually 'this'. function
     // just gets this and calls ThreadProc
-    static DWORD WINAPI InitialThreadProc(LPVOID pv);
+    static DWORD WINAPI InitialThreadProc(__inout LPVOID pv);
 
     // start thread running  - error if already running
     BOOL Create();
@@ -192,7 +196,13 @@ public:
     // accessor thread calls this when done with thread (having told thread
     // to exit)
     void Close() {
+
+        // Disable warning: Conversion from LONG to PVOID of greater size
+#pragma warning(push)
+#pragma warning(disable: 4312)
         HANDLE hThread = (HANDLE)InterlockedExchangePointer(&m_hThread, 0);
+#pragma warning(pop)
+
         if (hThread) {
             WaitForSingleObject(hThread, INFINITE);
             CloseHandle(hThread);
@@ -214,7 +224,7 @@ public:
     DWORD GetRequest();
 
     // is there a request?
-    BOOL CheckRequest(DWORD * pParam);
+    BOOL CheckRequest(__out_opt DWORD * pParam);
 
     // reply to the request
     void Reply(DWORD);
@@ -230,6 +240,7 @@ public:
     // available. S_FALSE means it's not available.
     static HRESULT CoInitializeHelper();
 };
+#endif // AM_NOVTABLE
 
 
 // CQueue
@@ -326,52 +337,27 @@ public:
     }
 };
 
-// miscellaneous string conversion functions
-// NOTE: as we need to use the same binaries on Win95 as on NT this code should
-// be compiled WITHOUT unicode being defined.  Otherwise we will not pick up
-// these internal routines and the binary will not run on Win95.
-
-int WINAPIV wsprintfWInternal(LPWSTR, LPCWSTR, ...);
-
-LPWSTR
-WINAPI
-lstrcpyWInternal(
-    LPWSTR lpString1,
-    LPCWSTR lpString2
-    );
-LPWSTR
-WINAPI
-lstrcpynWInternal(
-    LPWSTR lpString1,
-    LPCWSTR lpString2,
-    int     iMaxLength
-    );
-int
-WINAPI
-lstrcmpWInternal(
-    LPCWSTR lpString1,
-    LPCWSTR lpString2
-    );
-int
-WINAPI
-lstrcmpiWInternal(
-    LPCWSTR lpString1,
-    LPCWSTR lpString2
-    );
-int
-WINAPI
-lstrlenWInternal(
-    LPCWSTR lpString
-    );
-
-#ifndef UNICODE
-#define wsprintfW wsprintfWInternal
-#define lstrcpyW lstrcpyWInternal
-#define lstrcpynW lstrcpynWInternal
-#define lstrcmpW lstrcmpWInternal
-#define lstrcmpiW lstrcmpiWInternal
-#define lstrlenW lstrlenWInternal
-#endif
+// Ensures that memory is not read past the length source buffer
+// and that memory is not written past the length of the dst buffer
+//   dst - buffer to copy to
+//   dst_size - total size of destination buffer
+//   cb_dst_offset - offset, first byte copied to dst+cb_dst_offset
+//   src - buffer to copy from
+//   src_size - total size of source buffer
+//   cb_src_offset - offset, first byte copied from src+cb_src_offset
+//   count - number of bytes to copy
+//
+// Returns:
+//    S_OK          - no error
+//    E_INVALIDARG  - values passed would lead to overrun
+HRESULT AMSafeMemMoveOffset(
+    __in_bcount(dst_size) void * dst,
+    __in size_t dst_size,
+    __in DWORD cb_dst_offset,
+    __in_bcount(src_size) const void * src,
+    __in size_t src_size,
+    __in DWORD cb_src_offset,
+    __in size_t count);
 
 extern "C"
 void * __stdcall memmoveInternal(void *, const void *, size_t);
@@ -405,7 +391,7 @@ exit_memchr:
 #endif
 }
 
-void WINAPI IntToWstr(int i, LPWSTR wstr);
+void WINAPI IntToWstr(int i, __out_ecount(12) LPWSTR wstr);
 
 #define WstrToInt(sz) _wtoi(sz)
 #define atoiW(sz) _wtoi(sz)
@@ -439,8 +425,11 @@ STDAPI_(WCHAR *) GetSubtypeNameW(const GUID *pSubtype);
 
 STDAPI_(LONG) GetBitmapFormatSize(const BITMAPINFOHEADER *pHeader);
 STDAPI_(DWORD) GetBitmapSize(const BITMAPINFOHEADER *pHeader);
+
+#ifdef __AMVIDEO__
 STDAPI_(BOOL) ContainsPalette(const VIDEOINFOHEADER *pVideoInfo);
 STDAPI_(const RGBQUAD *) GetBitmapPalette(const VIDEOINFOHEADER *pVideoInfo);
+#endif // __AMVIDEO__
 
 
 // Compares two interfaces and returns TRUE if they are on the same object
@@ -458,15 +447,15 @@ LONGLONG WINAPI Int64x32Div32(LONGLONG a, LONG b, LONG c, LONG rnd);
 
 
 // Avoids us dyna-linking to SysAllocString to copy BSTR strings
-STDAPI WriteBSTR(BSTR * pstrDest, LPCWSTR szSrc);
-STDAPI FreeBSTR(BSTR* pstr);
+STDAPI WriteBSTR(__deref_out BSTR * pstrDest, LPCWSTR szSrc);
+STDAPI FreeBSTR(__deref_in BSTR* pstr);
 
 // Return a wide string - allocating memory for it
 // Returns:
 //    S_OK          - no error
 //    E_POINTER     - ppszReturn == NULL
 //    E_OUTOFMEMORY - can't allocate memory for returned string
-STDAPI AMGetWideString(LPCWSTR pszString, LPWSTR *ppszReturn);
+STDAPI AMGetWideString(LPCWSTR pszString, __deref_out LPWSTR *ppszReturn);
 
 // Special wait for objects owning windows
 DWORD WINAPI WaitDispatchingMessages(
@@ -488,7 +477,7 @@ HRESULT AmGetLastErrorToHResult(void);
 
 // duplicate of ATL's CComPtr to avoid linker conflicts.
 
-IUnknown* QzAtlComPtrAssign(IUnknown** pp, IUnknown* lp);
+IUnknown* QzAtlComPtrAssign(__deref_inout_opt IUnknown** pp, __in_opt IUnknown* lp);
 
 template <class T>
 class QzCComPtr
@@ -527,7 +516,17 @@ public:
 	T* p;
 };
 
-MMRESULT CompatibleTimeSetEvent( UINT uDelay, UINT uResolution, LPTIMECALLBACK lpTimeProc, DWORD_PTR dwUser, UINT fuEvent );
+MMRESULT CompatibleTimeSetEvent( UINT uDelay, UINT uResolution, __in LPTIMECALLBACK lpTimeProc, DWORD_PTR dwUser, UINT fuEvent );
 bool TimeKillSynchronousFlagAvailable( void );
+
+//  Helper to replace lstrcpmi
+__inline int lstrcmpiLocaleIndependentW(LPCWSTR lpsz1, LPCWSTR lpsz2)
+{
+    return  CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, lpsz1, -1, lpsz2, -1) - CSTR_EQUAL;
+}
+__inline int lstrcmpiLocaleIndependentA(LPCSTR lpsz1, LPCSTR lpsz2)
+{
+    return  CompareStringA(LOCALE_INVARIANT, NORM_IGNORECASE, lpsz1, -1, lpsz2, -1) - CSTR_EQUAL;
+}
 
 #endif /* __WXUTIL__ */

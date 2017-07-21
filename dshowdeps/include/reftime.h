@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - defines CRefTime, a class that manages
 //       reference times.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation. All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation. All rights reserved.
 //------------------------------------------------------------------------------
 
 

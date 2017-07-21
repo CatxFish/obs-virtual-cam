@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - defines a class hierarchy for creating
 //       COM objects.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -179,9 +179,9 @@ public:
 
     /* These increment and decrement the number of active objects */
 
-    CBaseObject(const TCHAR *pName);
+    CBaseObject(__in_opt LPCTSTR pName);
 #ifdef UNICODE
-    CBaseObject(const char *pName);
+    CBaseObject(__in_opt LPCSTR pName);
 #endif
     ~CBaseObject();
 
@@ -208,15 +208,15 @@ protected:                      /* So we can override NonDelegatingRelease() */
 
 public:
 
-    CUnknown(const TCHAR *pName, LPUNKNOWN pUnk);
+    CUnknown(__in_opt LPCTSTR pName, __in_opt LPUNKNOWN pUnk);
     virtual ~CUnknown() {};
 
     // This is redundant, just use the other constructor
     //   as we never touch the HRESULT in this anyway
-    CUnknown(TCHAR *pName, LPUNKNOWN pUnk,HRESULT *phr);
+    CUnknown(__in_opt LPCTSTR Name, __in_opt LPUNKNOWN pUnk, __inout_opt HRESULT *phr);
 #ifdef UNICODE
-    CUnknown(const char *pName, LPUNKNOWN pUnk);
-    CUnknown(char *pName, LPUNKNOWN pUnk,HRESULT *phr);
+    CUnknown(__in_opt LPCSTR pName, __in_opt LPUNKNOWN pUnk);
+    CUnknown(__in_opt LPCSTR pName, __in_opt LPUNKNOWN pUnk,__inout_opt HRESULT *phr);
 #endif
 
     /* Return the owner of this object */
@@ -232,33 +232,19 @@ public:
 
     /* Non delegating unknown implementation */
 
-    STDMETHODIMP NonDelegatingQueryInterface(REFIID, void **);
+    STDMETHODIMP NonDelegatingQueryInterface(REFIID, __deref_out void **);
     STDMETHODIMP_(ULONG) NonDelegatingAddRef();
     STDMETHODIMP_(ULONG) NonDelegatingRelease();
 };
 
-#if (_MSC_VER <= 1200)
-#pragma warning(disable:4211)
-
-/* The standard InterlockedXXX functions won't take volatiles */
-static inline LONG WINAPI InterlockedIncrement( volatile LONG * plong )
-{ return InterlockedIncrement( const_cast<LONG*>( plong ) ); }
-
-static inline LONG WINAPI InterlockedDecrement( volatile LONG * plong )
-{ return InterlockedDecrement( const_cast<LONG*>( plong ) ); }
-
-#pragma warning(default:4211)
-#endif
-
-
 /* Return an interface pointer to a requesting client
    performing a thread safe AddRef as necessary */
 
-STDAPI GetInterface(LPUNKNOWN pUnk, void **ppv);
+STDAPI GetInterface(LPUNKNOWN pUnk, __out void **ppv);
 
 /* A function that can create a new COM object */
 
-typedef CUnknown *(CALLBACK *LPFNNewCOMObject)(LPUNKNOWN pUnkOuter, HRESULT *phr);
+typedef CUnknown *(CALLBACK *LPFNNewCOMObject)(__in_opt LPUNKNOWN pUnkOuter, __inout_opt HRESULT *phr);
 
 /*  A function (can be NULL) which is called from the DLL entrypoint
     routine for each factory template:
@@ -285,7 +271,7 @@ public:
         return (IsEqualCLSID(*m_ClsID,rclsid));
     };
 
-    CUnknown *CreateInstance(LPUNKNOWN pUnk, HRESULT *phr) const {
+    CUnknown *CreateInstance(__inout_opt LPUNKNOWN pUnk, __inout_opt HRESULT *phr) const {
         CheckPointer(phr,NULL);
         return m_lpfnNew(pUnk, phr);
     };
@@ -297,7 +283,7 @@ public:
    class supports (the default implementation only supports IUnknown) */
 
 #define DECLARE_IUNKNOWN                                        \
-    STDMETHODIMP QueryInterface(REFIID riid, void **ppv) {      \
+    STDMETHODIMP QueryInterface(REFIID riid, __deref_out void **ppv) {      \
         return GetOwner()->QueryInterface(riid,ppv);            \
     };                                                          \
     STDMETHODIMP_(ULONG) AddRef() {                             \

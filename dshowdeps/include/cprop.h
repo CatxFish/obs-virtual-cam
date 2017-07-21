@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -50,14 +50,14 @@ private:
     BOOL m_bObjectSet ;                  // SetObject has been called or not.
 public:
 
-    CBasePropertyPage(TCHAR *pName,      // Debug only name
-                      LPUNKNOWN pUnk,    // COM Delegator
-                      int DialogId,      // Resource ID
-                      int TitleId);      // To get tital
+    CBasePropertyPage(__in_opt LPCTSTR pName,      // Debug only name
+                      __inout_opt LPUNKNOWN pUnk, // COM Delegator
+                      int DialogId,               // Resource ID
+                      int TitleId);               // To get tital
 
 #ifdef UNICODE
-    CBasePropertyPage(CHAR *pName,
-                      LPUNKNOWN pUnk,
+    CBasePropertyPage(__in_opt LPCSTR pName,
+                      __inout_opt LPUNKNOWN pUnk,
                       int DialogId,  
                       int TitleId);
 #endif
@@ -75,20 +75,20 @@ public:
 
     // These implement an IPropertyPage interface
 
-    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid,void **ppv);
+    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv);
     STDMETHODIMP_(ULONG) NonDelegatingRelease();
     STDMETHODIMP_(ULONG) NonDelegatingAddRef();
-    STDMETHODIMP SetPageSite(LPPROPERTYPAGESITE pPageSite);
-    STDMETHODIMP Activate(HWND hwndParent,LPCRECT prect,BOOL fModal);
+    STDMETHODIMP SetPageSite(__in_opt LPPROPERTYPAGESITE pPageSite);
+    STDMETHODIMP Activate(HWND hwndParent, LPCRECT prect,BOOL fModal);
     STDMETHODIMP Deactivate(void);
-    STDMETHODIMP GetPageInfo(LPPROPPAGEINFO pPageInfo);
-    STDMETHODIMP SetObjects(ULONG cObjects, LPUNKNOWN *ppUnk);
+    STDMETHODIMP GetPageInfo(__out LPPROPPAGEINFO pPageInfo);
+    STDMETHODIMP SetObjects(ULONG cObjects, __in_ecount_opt(cObjects) LPUNKNOWN *ppUnk);
     STDMETHODIMP Show(UINT nCmdShow);
     STDMETHODIMP Move(LPCRECT prect);
     STDMETHODIMP IsPageDirty(void) { return m_bDirty ? S_OK : S_FALSE; }
     STDMETHODIMP Apply(void);
     STDMETHODIMP Help(LPCWSTR lpszHelpDir) { return E_NOTIMPL; }
-    STDMETHODIMP TranslateAccelerator(LPMSG lpMsg) { return E_NOTIMPL; }
+    STDMETHODIMP TranslateAccelerator(__inout LPMSG lpMsg) { return E_NOTIMPL; }
 };
 
 #endif // __CPROP__

@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -14,12 +14,12 @@
 class CSeekingPassThru : public ISeekingPassThru, public CUnknown
 {
 public:
-    static CUnknown *CreateInstance(LPUNKNOWN pUnk, HRESULT *phr);
-    CSeekingPassThru(TCHAR *pName, LPUNKNOWN pUnk, HRESULT *phr);
+    static CUnknown *CreateInstance(__inout_opt LPUNKNOWN pUnk, __inout HRESULT *phr);
+    CSeekingPassThru(__in_opt LPCTSTR pName, __inout_opt LPUNKNOWN pUnk, __inout HRESULT *phr);
     ~CSeekingPassThru();
 
     DECLARE_IUNKNOWN;
-    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void ** ppv);
+    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, __deref_out void ** ppv);
 
     STDMETHODIMP Init(BOOL bSupportRendering, IPin *pPin);
 

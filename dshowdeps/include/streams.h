@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes - defines overall streams architecture.
 //
-// Copyright (c) 1992-2002 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -13,13 +13,10 @@
 #ifdef	_MSC_VER
 // disable some level-4 warnings, use #pragma warning(enable:###) to re-enable
 #pragma warning(disable:4100) // warning C4100: unreferenced formal parameter
-#pragma warning(disable:4127) // warning C4127: conditional expression is constant
-#pragma warning(disable:4189) // warning C4189: local variable is initialized but not referenced
 #pragma warning(disable:4201) // warning C4201: nonstandard extension used : nameless struct/union
 #pragma warning(disable:4511) // warning C4511: copy constructor could not be generated
 #pragma warning(disable:4512) // warning C4512: assignment operator could not be generated
-#pragma warning(disable:4514) // warning C4514: unreferenced inline function has been removed
-#pragma warning(disable:4710) // warning C4710: 'function' not inlined
+#pragma warning(disable:4514) // warning C4514: "unreferenced inline function has been removed"
 
 #if _MSC_VER>=1100
 #define AM_NOVTABLE __declspec(novtable)
@@ -27,6 +24,7 @@
 #define AM_NOVTABLE
 #endif
 #endif	// MSC_VER
+
 
 // Because of differences between Visual C++ and older Microsoft SDKs,
 // you may have defined _DEBUG without defining DEBUG.  This logic
@@ -42,21 +40,21 @@
 #include <windowsx.h>
 #include <olectl.h>
 #include <ddraw.h>
-
-// Disable warning message for C4201 - use of nameless struct/union
-// Otherwise, strmif.h will generate warnings for Win32 debug builds
-#pragma warning( disable : 4201 )  
-
 #include <mmsystem.h>
 
+
 #ifndef NUMELMS
+#if _WIN32_WINNT < 0x0600
    #define NUMELMS(aa) (sizeof(aa)/sizeof((aa)[0]))
+#else
+   #define NUMELMS(aa) ARRAYSIZE(aa)
+#endif   
 #endif
 
 ///////////////////////////////////////////////////////////////////////////
 // The following definitions come from the Platform SDK and are required if
 // the applicaiton is being compiled with the headers from Visual C++ 6.0.
-///////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////// ////////////////////////
 #ifndef InterlockedExchangePointer
 	#define InterlockedExchangePointer(Target, Value) \
    (PVOID)InterlockedExchange((PLONG)(Target), (LONG)(Value))
@@ -125,18 +123,39 @@ typedef struct {
 #ifndef DWLP_USER
   #define DWLP_USER       DWLP_DLGPROC + sizeof(DLGPROC)
 #endif
+
+
+#pragma warning(push)
+#pragma warning(disable: 4312 4244)
+// _GetWindowLongPtr
+// Templated version of GetWindowLongPtr, to suppress spurious compiler warning.
+template <class T>
+T _GetWindowLongPtr(HWND hwnd, int nIndex)
+{
+    return (T)GetWindowLongPtr(hwnd, nIndex);
+}
+
+// _SetWindowLongPtr
+// Templated version of SetWindowLongPtr, to suppress spurious compiler warning.
+template <class T>
+LONG_PTR _SetWindowLongPtr(HWND hwnd, int nIndex, T p)
+{
+    return SetWindowLongPtr(hwnd, nIndex, (LONG_PTR)p);
+}
+#pragma warning(pop)
+
 ///////////////////////////////////////////////////////////////////////////
 // End Platform SDK definitions
 ///////////////////////////////////////////////////////////////////////////
 
 
-#pragma warning(disable:4201) // warning C4201: nonstandard extension used : nameless struct/union
 #include <strmif.h>     // Generated IDL header file for streams interfaces
+#include <intsafe.h>    // required by amvideo.h
 
 #include <reftime.h>    // Helper class for REFERENCE_TIME management
 #include <wxdebug.h>    // Debug support for logging and ASSERTs
 #include <amvideo.h>    // ActiveMovie video interfaces and definitions
-//include amaudio.h explicitly if you need it.  it requires the DirectX SDK.
+//include amaudio.h explicitly if you need it.  it requires the DX SDK.
 //#include <amaudio.h>    // ActiveMovie audio interfaces and definitions
 #include <wxutil.h>     // General helper classes for threads etc
 #include <combase.h>    // Base COM classes to support IUnknown
@@ -172,6 +191,8 @@ typedef struct {
 #include <strmctl.h>    // IAMStreamControl support
 #include <edevdefs.h>   // External device control interface defines
 #include <audevcod.h>   // audio filter device error event codes
+
+
 
 #else
     #ifdef DEBUG
