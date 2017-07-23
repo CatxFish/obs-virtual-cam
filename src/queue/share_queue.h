@@ -66,7 +66,7 @@ void shared_queue_close(share_queue* q);
 bool shared_queue_check(int mode);
 bool shared_queue_set_delay(share_queue* q, int delay_video_frame);
 bool share_queue_init_index(share_queue* q);
-bool shared_queue_get_video_format(share_queue* q, int* format, int* width,
+bool shared_queue_get_video_format(int* format, int* width,
 	int* height, int64_t* avgtime);
 bool shared_queue_get_video(share_queue* q, uint8_t** dst_ptr,
 	uint32_t*linesize, uint64_t* timestamp);

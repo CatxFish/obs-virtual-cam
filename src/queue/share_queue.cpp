@@ -172,17 +172,31 @@ bool share_queue_init_index(share_queue* q)
 	return true;
 }
 
-bool shared_queue_get_video_format(share_queue* q,int* format ,int* width, 
+bool shared_queue_get_video_format(int* format ,int* width, 
 	int* height, int64_t* avgtime)
 {
-	if (!q || !q->header)
+	bool success =true;
+	HANDLE hwnd;
+	queue_header* header;
+	
+	hwnd = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, MAPPING_NAMEV);
+	if (hwnd)
+		header = (queue_header*)MapViewOfFile(hwnd, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	else
 		return false;
 
-	*format = q->header->format;
-	*width = q->header->frame_width;
-	*height = q->header->frame_height;
-	*avgtime = (q->header->frame_time)/100;
-	return true;
+	if (header){
+		*format = header->format;
+		*width = header->frame_width;
+		*height = header->frame_height;
+		*avgtime = (header->frame_time) / 100;	
+		UnmapViewOfFile(header);
+	}
+	else
+		success = false;
+
+	CloseHandle(hwnd);
+	return success;
 }
 
 bool shared_queue_get_video(share_queue* q, uint8_t** data, 

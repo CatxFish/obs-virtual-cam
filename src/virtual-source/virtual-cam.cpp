@@ -32,6 +32,7 @@ HRESULT CVCam::NonDelegatingQueryInterface(REFIID riid, void **ppv)
 CVCamStream::CVCamStream(HRESULT *phr, CVCam *pParent, LPCWSTR pPinName) :
 CSourceStream(NAME("Video"), phr, pParent, pPinName), parent(pParent)
 {
+	use_obs_format_init = CheckObsSetting();
 	GetMediaType(0,&m_mt);
 	prev_end_ts = 0;
 }
@@ -40,12 +41,27 @@ CVCamStream::~CVCamStream()
 {
 }
 
+bool CVCamStream::CheckObsSetting()
+{
+	bool get= shared_queue_get_video_format(&obs_format, &obs_width,
+		&obs_height, &obs_time_perframe);
+
+	if (obs_width < 320 || obs_height < 240)
+		return false;
+	else if (obs_time_perframe < 166666 || obs_time_perframe>1000000)
+		return false;
+
+	if (obs_height % 2 != 0)
+		obs_height += 1;
+
+	return get;
+}
+
 HRESULT CVCamStream::ChangeMediaType(int nMediatype)
 {
 	GetMediaType(0,&m_mt);
 	return S_OK;
 }
-
 
 void CVCamStream::SetConvertContext(int width, int height, AVPixelFormat fotmat)
 {
@@ -83,7 +99,7 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 
 	if (!queue.hwnd){
 		if (shared_queue_open(&queue, ModeVideo)){
-			shared_queue_get_video_format(&queue, &format, &frame_width, 
+			shared_queue_get_video_format(&format, &frame_width, 
 				&frame_height, &time_perframe);
 			SetConvertContext(frame_width, frame_height, (AVPixelFormat)format);
 		}
@@ -152,7 +168,10 @@ HRESULT CVCamStream::SetMediaType(const CMediaType *pmt)
 
 HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 {
-	if (iPosition < 0 || iPosition>4)
+	if (!use_obs_format_init)
+		iPosition += 1;
+
+	if (iPosition < 0 || iPosition>5)
 		return E_INVALIDARG;
 
 	DECLARE_PTR(VIDEOINFOHEADER, pvi, 
@@ -161,24 +180,32 @@ HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 
 	switch (iPosition){
 	case 0:
-		pvi->bmiHeader.biWidth = 1920;
-		pvi->bmiHeader.biHeight = 1080;
+		pvi->bmiHeader.biWidth = obs_width;
+		pvi->bmiHeader.biHeight = obs_height;
+		pvi->AvgTimePerFrame = obs_time_perframe;
 		break;
 	case 1:
-		pvi->bmiHeader.biWidth = 1280;
-		pvi->bmiHeader.biHeight = 720;
+		pvi->bmiHeader.biWidth = 1920;
+		pvi->bmiHeader.biHeight = 1080;
+		pvi->AvgTimePerFrame = 333333;
 		break;
 	case 2:
-		pvi->bmiHeader.biWidth = 960;
-		pvi->bmiHeader.biHeight = 540;
+		pvi->bmiHeader.biWidth = 1280;
+		pvi->bmiHeader.biHeight = 720;
+		pvi->AvgTimePerFrame = 333333;
 		break;
 	case 3:
+		pvi->bmiHeader.biWidth = 960;
+		pvi->bmiHeader.biHeight = 540;
+		pvi->AvgTimePerFrame = 333333;
+		break;
+	case 4:
 		pvi->bmiHeader.biWidth = 640;
 		pvi->bmiHeader.biHeight = 360;
+		pvi->AvgTimePerFrame = 333333;
 		break;
 	}
 
-	pvi->AvgTimePerFrame = 333333;
 	pvi->bmiHeader.biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');;
 	pvi->bmiHeader.biBitCount = 16;
 	pvi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -234,6 +261,8 @@ bool CVCamStream::ValidateResolution(long width,long height)
 	else if (width * 9 == height * 16)
 		return true;
 	else if (width * 3 == height * 4)
+		return true;
+	else if (use_obs_format_init && width == obs_width && height == obs_height)
 		return true;
 	else
 		return false;

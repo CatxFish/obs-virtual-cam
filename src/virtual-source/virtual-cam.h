@@ -80,6 +80,7 @@ public:
 	HRESULT OnThreadCreate(void);
 	HRESULT OnThreadDestroy(void);
 	HRESULT ChangeMediaType(int nMediatype);
+	bool CheckObsSetting();
 	bool ValidateResolution(long width, long height);
 	void SetConvertContext(int width, int height, AVPixelFormat fotmat);
 
@@ -99,4 +100,10 @@ private:
 	int frame_height = 0;
 	int64_t time_perframe = 0;
 	struct SwsContext *convert_ctx = nullptr;
+
+	bool use_obs_format_init = false;
+	int obs_format = 0;
+	int obs_width = 1920;
+	int obs_height = 1080;
+	int64_t obs_time_perframe = 333333;
 };
