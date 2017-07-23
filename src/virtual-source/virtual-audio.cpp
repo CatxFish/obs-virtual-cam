@@ -182,9 +182,8 @@ HRESULT CVAudioStream::CheckMediaType(const CMediaType *pMediaType)
 {
 	WAVEFORMATEX *paf = (WAVEFORMATEX *)(pMediaType->Format());
 	if (*pMediaType != m_mt)
-	{
 		return E_INVALIDARG;
-	}
+
 	return S_OK;
 }
 
@@ -197,8 +196,7 @@ HRESULT CVAudioStream::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERT
 	CheckPointer(pProperties, E_POINTER);
 
 	WAVEFORMATEX* pwfex = (WAVEFORMATEX*)m_mt.Format();
-	if (pwfex)
-	{
+	if (pwfex){
 
 		pProperties->cBuffers = 1;
 		pProperties->cbBuffer = AUDIO_BUFFER_SIZE;

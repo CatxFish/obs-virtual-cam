@@ -77,15 +77,15 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 	uint64_t timestamp=0;
 	REFERENCE_TIME start_time=0;
 	REFERENCE_TIME end_time = 0;
+	REFERENCE_TIME duration = 0;
 
 	hr = pms->GetPointer((BYTE**)&dst[0]);
 
 	if (!queue.hwnd){
 		if (shared_queue_open(&queue, ModeVideo)){
-			int format = queue.header->format;
-			int width = queue.header->frame_width;
-			int height = queue.header->frame_height;
-			SetConvertContext(width, height, (AVPixelFormat)format);
+			shared_queue_get_video_format(&queue, &format, &frame_width, 
+				&frame_height, &time_perframe);
+			SetConvertContext(frame_width, frame_height, (AVPixelFormat)format);
 		}
 	}
 
@@ -112,12 +112,15 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 		dshow_start_ts = prev_end_ts;
 	}
 
-	if (get_sample)
+	if (get_sample){
 		start_time = dshow_start_ts + (timestamp - obs_start_ts) / 100;
+		duration = time_perframe;
+	}
 	else{
 		int size = pms->GetActualDataLength();
 		memset(dst[0], 127, size);
 		start_time = prev_end_ts;
+		duration = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
 	}
 
 	if (queue.header && queue.header->state == OutputStop || get_times > 20){
@@ -127,8 +130,7 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 		obs_start_ts = 0;
 	}
 
-	REFERENCE_TIME avg_time= ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
-	end_time = start_time + avg_time;
+	end_time = start_time + duration;
 	prev_end_ts = end_time;
 	pms->SetTime(&start_time, &end_time);
 	pms->SetSyncPoint(TRUE);
@@ -165,12 +167,15 @@ HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 	case 1:
 		pvi->bmiHeader.biWidth = 1280;
 		pvi->bmiHeader.biHeight = 720;
+		break;
 	case 2:
 		pvi->bmiHeader.biWidth = 960;
 		pvi->bmiHeader.biHeight = 540;
+		break;
 	case 3:
 		pvi->bmiHeader.biWidth = 640;
 		pvi->bmiHeader.biHeight = 360;
+		break;
 	}
 
 	pvi->AvgTimePerFrame = 333333;
@@ -214,15 +219,25 @@ HRESULT CVCamStream::CheckMediaType(const CMediaType *pMediaType)
 	if (pvi->AvgTimePerFrame < 166666 || pvi->AvgTimePerFrame >1000000)
 		return E_INVALIDARG;
 
-	if (pvi->bmiHeader.biWidth == 1920 && pvi->bmiHeader.biHeight == 1080 ||
-		pvi->bmiHeader.biWidth == 1280 && pvi->bmiHeader.biHeight == 720 ||
-		pvi->bmiHeader.biWidth == 960 && pvi->bmiHeader.biHeight == 540 ||
-		pvi->bmiHeader.biWidth == 640 && pvi->bmiHeader.biHeight == 360 
-		)
-	return S_OK;
+	if (ValidateResolution(pvi->bmiHeader.biWidth, pvi->bmiHeader.biHeight))
+		return S_OK;
 
 	return E_INVALIDARG;
 } 
+
+bool CVCamStream::ValidateResolution(long width,long height)
+{
+	if (width < 320 || height <240)
+		return false;
+	else if (width > 4096)
+		return false;
+	else if (width * 9 == height * 16)
+		return true;
+	else if (width * 3 == height * 4)
+		return true;
+	else
+		return false;
+}
 
 HRESULT CVCamStream::DecideBufferSize(IMemAllocator *pAlloc, 
 	ALLOCATOR_PROPERTIES *pProperties)
@@ -262,21 +277,21 @@ HRESULT CVCamStream::OnThreadDestroy()
 
 HRESULT STDMETHODCALLTYPE CVCamStream::SetFormat(AM_MEDIA_TYPE *pmt)
 {
-	if (CheckMediaType((CMediaType *)pmt) != S_OK) {
+	if (parent->GetState() != State_Stopped)
 		return E_FAIL;
-	}
+
+	if (CheckMediaType((CMediaType *)pmt) != S_OK)
+		return E_FAIL;
 
 	VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)(pmt->pbFormat);
+	VIDEOINFOHEADER *pvi_src = (VIDEOINFOHEADER *)m_mt.Format();
 
-	if (pvi->bmiHeader.biWidth == 1920 && pvi->bmiHeader.biHeight == 1080)
-		GetMediaType(0, &m_mt);
-	else if(pvi->bmiHeader.biWidth == 1280 && pvi->bmiHeader.biHeight == 720)
-		GetMediaType(1, &m_mt);
-	else if (pvi->bmiHeader.biWidth == 960 && pvi->bmiHeader.biHeight == 540)
-		GetMediaType(2, &m_mt);
-	else if (pvi->bmiHeader.biWidth == 640 && pvi->bmiHeader.biHeight == 360)
-		GetMediaType(3, &m_mt);
-
+	pvi_src->bmiHeader.biWidth = pvi->bmiHeader.biWidth;
+	pvi_src->bmiHeader.biHeight = pvi->bmiHeader.biHeight;
+	pvi_src->bmiHeader.biSizeImage = pvi->bmiHeader.biWidth*
+		pvi->bmiHeader.biHeight * 2;
+	pvi_src->AvgTimePerFrame = pvi->AvgTimePerFrame;
+	m_mt.SetSampleSize(pvi_src->bmiHeader.biSizeImage);
 
 	IPin* pin;
 	ConnectedTo(&pin);

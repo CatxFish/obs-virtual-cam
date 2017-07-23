@@ -149,8 +149,7 @@ STDAPI RegisterFilters(BOOL bRegister)
 			fm->Release();
 	}
 
-	if (SUCCEEDED(hr) && !bRegister)
-	{
+	if (SUCCEEDED(hr) && !bRegister){
 		hr = AMovieSetupUnregisterServer(CLSID_OBS_VirtualA);
 		hr = AMovieSetupUnregisterServer(CLSID_OBS_VirtualV);
 	}

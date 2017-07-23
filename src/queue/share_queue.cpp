@@ -172,6 +172,19 @@ bool share_queue_init_index(share_queue* q)
 	return true;
 }
 
+bool shared_queue_get_video_format(share_queue* q,int* format ,int* width, 
+	int* height, int64_t* avgtime)
+{
+	if (!q || !q->header)
+		return false;
+
+	*format = q->header->format;
+	*width = q->header->frame_width;
+	*height = q->header->frame_height;
+	*avgtime = (q->header->frame_time)/100;
+	return true;
+}
+
 bool shared_queue_get_video(share_queue* q, uint8_t** data, 
 	uint32_t*linesize, uint64_t* timestamp)
 {
@@ -251,7 +264,7 @@ bool shared_queue_push_video(share_queue* q, uint32_t* linesize,
 	uint8_t* buff = (uint8_t*)q->header + offset;
 	frame_header* head = (frame_header*)buff;
 	uint8_t* data = (uint8_t*)buff + q->header->element_header_size;
-	uint32_t planes = 0;
+	int planes = 0;
 
 	switch (q->header->format) {
 	case AV_PIX_FMT_NONE:

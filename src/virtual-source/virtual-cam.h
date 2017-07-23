@@ -3,7 +3,6 @@
 extern "C"
 {
 #include "libswscale/swscale.h" 
-#include "libswresample/swresample.h"
 };
 
 #include "../queue/share_queue.h"
@@ -24,6 +23,7 @@ public:
 	static CUnknown * WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT *phr);
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
 	IFilterGraph *GetGraph() { return m_pGraph; }
+	FILTER_STATE GetState(){ return m_State; }
 	CVCam(LPUNKNOWN lpunk, HRESULT *phr);
 
 };
@@ -79,8 +79,8 @@ public:
 	HRESULT SetMediaType(const CMediaType *pmt);
 	HRESULT OnThreadCreate(void);
 	HRESULT OnThreadDestroy(void);
-
 	HRESULT ChangeMediaType(int nMediatype);
+	bool ValidateResolution(long width, long height);
 	void SetConvertContext(int width, int height, AVPixelFormat fotmat);
 
 
@@ -94,5 +94,9 @@ private:
 	uint8_t* dst[1];
 	uint32_t linesize[8];
 	uint32_t dst_linesize[1];
+	int format = 0;
+	int frame_width = 0;
+	int frame_height = 0;
+	int64_t time_perframe = 0;
 	struct SwsContext *convert_ctx = nullptr;
 };
