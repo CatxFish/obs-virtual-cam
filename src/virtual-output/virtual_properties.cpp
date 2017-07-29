@@ -19,6 +19,9 @@ VirtualProperties::VirtualProperties(QWidget *parent) :
 	connect(ui->horizontalSlider, SIGNAL(valueChanged(int)), ui->spinBox,
 		SLOT(setValue(int)));
 
+	config_t* config = obs_frontend_get_global_config();
+	config_set_default_int(config, "VirtualOutput", "OutDelay", 3);
+
 }
 
 VirtualProperties::~VirtualProperties()
@@ -34,17 +37,14 @@ void VirtualProperties::SetVisable()
 void VirtualProperties::onStart()
 {
 	config_t* config = obs_frontend_get_global_config();
-	output_enable = true;
 	int delay = ui->horizontalSlider->value();
 
-	if (config){
-		config_set_bool(config, "VirtualOutput", "OutEnable", output_enable);
-		config_set_int(config, "VirtualOutput", "OutDelay", delay+1);
-	}
+	if (config)
+		config_set_int(config, "VirtualOutput", "OutDelay", delay);
 
 	ui->spinBox->setEnabled(false);
 	ui->horizontalSlider->setEnabled(false);
-	virtual_output_enable(delay);
+	virtual_output_enable(delay+1);
 	ui->pushButtonStart->setEnabled(false);
 	ui->pushButtonStop->setEnabled(true);
 }
@@ -52,10 +52,6 @@ void VirtualProperties::onStart()
 void VirtualProperties::onStop()
 {
 	config_t* config = obs_frontend_get_global_config();
-	output_enable = true;
-
-	if (config)
-		config_set_bool(config, "VirtualOutput", "OutEnable", output_enable);
 
 	virtual_output_disable();
 
@@ -68,8 +64,7 @@ void VirtualProperties::onStop()
 void VirtualProperties::showEvent(QShowEvent *event)
 {
 	config_t* config = obs_frontend_get_global_config();
-	output_enable = config_get_bool(config, "VirtualOutput", "OutEnable");
-	int delay = config_get_int(config, "VirtualOutput", "OutDelay");
+	int delay = config_get_default_int(config, "VirtualOutput", "OutDelay");
 
 	if (delay < 0 || delay >30)
 		delay = 0;
