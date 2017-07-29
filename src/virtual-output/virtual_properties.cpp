@@ -64,7 +64,7 @@ void VirtualProperties::onStop()
 void VirtualProperties::showEvent(QShowEvent *event)
 {
 	config_t* config = obs_frontend_get_global_config();
-	int delay = config_get_default_int(config, "VirtualOutput", "OutDelay");
+	int delay = config_get_int(config, "VirtualOutput", "OutDelay");
 
 	if (delay < 0 || delay >30)
 		delay = 0;
