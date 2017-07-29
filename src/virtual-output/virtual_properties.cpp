@@ -39,7 +39,7 @@ void VirtualProperties::onStart()
 
 	if (config){
 		config_set_bool(config, "VirtualOutput", "OutEnable", output_enable);
-		config_set_int(config, "VirtualOutput", "OutDelay", delay);
+		config_set_int(config, "VirtualOutput", "OutDelay", delay+1);
 	}
 
 	ui->spinBox->setEnabled(false);
@@ -71,8 +71,8 @@ void VirtualProperties::showEvent(QShowEvent *event)
 	output_enable = config_get_bool(config, "VirtualOutput", "OutEnable");
 	int delay = config_get_int(config, "VirtualOutput", "OutDelay");
 
-	if (delay < 3 || delay >30)
-		delay = 3;
+	if (delay < 0 || delay >30)
+		delay = 0;
 
 	ui->spinBox->setValue(delay);
 	ui->horizontalSlider->setValue(delay);

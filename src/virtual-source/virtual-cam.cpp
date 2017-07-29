@@ -171,7 +171,7 @@ HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 	if (!use_obs_format_init)
 		iPosition += 1;
 
-	if (iPosition < 0 || iPosition>5)
+	if (iPosition < 0 || iPosition>4)
 		return E_INVALIDARG;
 
 	DECLARE_PTR(VIDEOINFOHEADER, pvi, 
@@ -228,6 +228,9 @@ HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 
 HRESULT CVCamStream::CheckMediaType(const CMediaType *pMediaType)
 {
+	if (pMediaType == nullptr)
+		return E_FAIL;
+
 	VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)(pMediaType->Format());
 
 	const GUID* type = pMediaType->Type();
@@ -306,6 +309,9 @@ HRESULT CVCamStream::OnThreadDestroy()
 
 HRESULT STDMETHODCALLTYPE CVCamStream::SetFormat(AM_MEDIA_TYPE *pmt)
 {
+	if (pmt == nullptr)
+		return E_FAIL;
+
 	if (parent->GetState() != State_Stopped)
 		return E_FAIL;
 
@@ -341,6 +347,9 @@ HRESULT STDMETHODCALLTYPE CVCamStream::GetNumberOfCapabilities(int *piCount,
 	int *piSize)
 {
 	*piCount = 4;
+	if (use_obs_format_init)
+		*piCount = *piCount + 1;
+
 	*piSize = sizeof(VIDEO_STREAM_CONFIG_CAPS);
 	return S_OK;
 }
@@ -348,9 +357,11 @@ HRESULT STDMETHODCALLTYPE CVCamStream::GetNumberOfCapabilities(int *piCount,
 HRESULT STDMETHODCALLTYPE CVCamStream::GetStreamCaps(int iIndex, 
 	AM_MEDIA_TYPE **pmt, BYTE *pSCC)
 {
+	if (!use_obs_format_init)
+		iIndex += 1;
+
 	if (iIndex < 0 || iIndex>4)
 		return E_INVALIDARG;
-
 
 	*pmt = CreateMediaType(&m_mt);
 	DECLARE_PTR(VIDEOINFOHEADER, pvi, (*pmt)->pbFormat);
@@ -358,18 +369,30 @@ HRESULT STDMETHODCALLTYPE CVCamStream::GetStreamCaps(int iIndex,
 
 	switch (iIndex){
 	case 0:
-		pvi->bmiHeader.biWidth = 1920;
-		pvi->bmiHeader.biHeight = 1080;
+		pvi->bmiHeader.biWidth = obs_width;
+		pvi->bmiHeader.biHeight = obs_height;
+		pvi->AvgTimePerFrame = obs_time_perframe;
 		break;
 	case 1:
+		pvi->bmiHeader.biWidth = 1920;
+		pvi->bmiHeader.biHeight = 1080;
+		pvi->AvgTimePerFrame = 333333;
+		break;
+	case 2:
 		pvi->bmiHeader.biWidth = 1280;
 		pvi->bmiHeader.biHeight = 720;
-	case 2:
+		pvi->AvgTimePerFrame = 333333;
+		break;
+	case 3:
 		pvi->bmiHeader.biWidth = 960;
 		pvi->bmiHeader.biHeight = 540;
-	case 3:
+		pvi->AvgTimePerFrame = 333333;
+		break;
+	case 4:
 		pvi->bmiHeader.biWidth = 640;
 		pvi->bmiHeader.biHeight = 360;
+		pvi->AvgTimePerFrame = 333333;
+		break;
 	}
 
 	pvi->AvgTimePerFrame = 333333;

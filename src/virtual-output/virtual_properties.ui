@@ -23,10 +23,13 @@
     </rect>
    </property>
    <property name="minimum">
-    <number>3</number>
+    <number>0</number>
    </property>
    <property name="maximum">
     <number>30</number>
+   </property>
+   <property name="value">
+    <number>3</number>
    </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
@@ -42,10 +45,13 @@
     </rect>
    </property>
    <property name="minimum">
-    <number>3</number>
+    <number>0</number>
    </property>
    <property name="maximum">
     <number>30</number>
+   </property>
+   <property name="value">
+    <number>3</number>
    </property>
   </widget>
   <widget class="QLabel" name="label">
