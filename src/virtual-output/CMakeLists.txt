@@ -8,11 +8,25 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
-include(../../cmake/external/Findlibobs.cmake)
-find_package(LibObs REQUIRED)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 
+set(LIBOBS_INCLUDE_DIR "LIBOBS_INCLUDE-NOTFOUND" CACHE FILEPATH "LIBOBS PATH")
+	if(OBS_FRONTEND_LIB EQUAL "LIBOBS_INCLUDE-NOTFOUND")
+		message(FATAL_ERROR "Could not find OBS include Path")
+	endif()
+
+set(LIBOBS_LIB "LIBOBS_LIB-NOTFOUND" CACHE FILEPATH "OBS library")
+	if(OBS_FRONTEND_LIB EQUAL "LIBOBS_LIB-NOTFOUND")
+		message(FATAL_ERROR "Could not find OBS library !")
+	endif()
+
+set(OBS_FRONTEND_LIB "OBS_FRONTEND_LIB-NOTFOUND" CACHE FILEPATH "OBS frontend library")
+	if(OBS_FRONTEND_LIB EQUAL "OBS_FRONTEND_LIB-NOTFOUND")
+		message(FATAL_ERROR "Could not find OBS Frontend API\'s library !")
+	endif()	
+	
+	
 set(virtualoutput_SOURCES
 	virtual_output.cpp
 	virtual_properties.cpp
@@ -33,12 +47,13 @@ add_library(obs-virtualoutput MODULE
 	
 include_directories(
 	"${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api"
+	${LIBOBS_INCLUDE_DIR}
 	${FFMPEG_INCLUDE_DIRS}
 	${Qt5Core_INCLUDES}
 	${Qt5Widgets_INCLUDES})
 		
 target_link_libraries(obs-virtualoutput
-	${LIBOBS_LIBRARIES}
+	${LIBOBS_LIB}
 	${OBS_FRONTEND_LIB}
 	Qt5::Core
 	Qt5::Widgets)
