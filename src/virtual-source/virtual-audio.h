@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../queue/share_queue.h"
+#include "../queue/share_queue_read.h"
 
 #define DECLARE_PTR(type, ptr, expr) type* ptr = (type*)(expr);
 

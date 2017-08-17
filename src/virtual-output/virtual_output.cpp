@@ -2,23 +2,27 @@
 #include <obs-frontend-api.h>
 #include <util/platform.h>
 #include <util/threading.h>
+#include <util/config-file.h>
 #include <QMainWindow>
 #include <QAction>
-#include "../queue/share_queue.h"
+#include "../queue/share_queue_write.h"
 #include "virtual_output.h"
 #include "virtual_properties.h"
 #include "get_format.h"
 #include "math.h"
 
+#define round_even(x){x&(-2)}
 
-struct virtual_sink {
-	obs_output_t *output;
+struct virtual_out_data {
+	obs_output_t *output = nullptr;
+	pthread_mutex_t mutex;
 	share_queue video_queue;
 	share_queue audio_queue;
-	int32_t width;
-	int32_t height;
-	int32_t delay;
-	int64_t last_video_ts;
+	int width = 0;
+	int height = 0;
+	int delay = 0;
+	int crop[4]; //left,top,right,bottom
+	int64_t last_video_ts = 0;
 };
 
 VirtualProperties* virtual_prop;
@@ -31,54 +35,62 @@ static const char *virtual_output_getname(void *unused)
 	return obs_module_text("VirtualOutput");
 }
 
+static void virtual_output_destroy(void *data)
+{
+	virtual_out_data *out_data = (virtual_out_data*)data;
+	if (out_data){
+		pthread_mutex_destroy(&out_data->mutex);
+		bfree(data);
+	}
+	
+}
 static void *virtual_output_create(obs_data_t *settings, obs_output_t *output)
 {
-	virtual_sink *data = 
-		(virtual_sink *)bzalloc(sizeof(struct virtual_sink));
+	virtual_out_data *data =
+		(virtual_out_data *)bzalloc(sizeof(struct virtual_out_data));
 	
 	data->output = output;
 	data->delay = obs_data_get_int(settings, "delay_frame");
-	UNUSED_PARAMETER(settings);
-	return data;
-}
-
-static void virtual_output_destroy(void *data)
-{
-	virtual_sink *output = (virtual_sink*)data;
-	if (output)
-		bfree(data);
+	pthread_mutex_init_value(&data->mutex);
+	if (pthread_mutex_init(&data->mutex, NULL) == 0){
+		UNUSED_PARAMETER(settings);
+		return data;
+	}
+	else
+		virtual_output_destroy(data);
+	return NULL;
 }
 
 static bool virtual_output_start(void *data)
 {
-	virtual_sink* out = (virtual_sink*)data;
-	video_t *video = obs_output_video(out->output);
+	virtual_out_data* out_data = (virtual_out_data*)data;
+	video_t *video = obs_output_video(out_data->output);
 	const struct video_output_info *voi = video_output_get_info(video);
-	out->width = (int32_t)obs_output_get_width(out->output);
-	out->height = (int32_t)obs_output_get_height(out->output);
+	out_data->width = (int32_t)obs_output_get_width(out_data->output);
+	out_data->height = (int32_t)obs_output_get_height(out_data->output);
 	AVPixelFormat fmt = obs_to_ffmpeg_video_format(
 		video_output_get_format(video));
 	double fps = video_output_get_frame_rate(video);
-	int64_t frame_interval = static_cast<int64_t>(1000000000 / fps);
+	int64_t interval = static_cast<int64_t>(1000000000 / fps);
 
-	bool start = shared_queue_create(&out->video_queue, ModeVideo,
-		fmt, out->width, out->height, frame_interval,out->delay+10);
+	bool start = shared_queue_create(&out_data->video_queue, ModeVideo,fmt,
+		out_data->width, out_data->height, interval, out_data->delay + 10);
 
-	start |= shared_queue_create(&out->audio_queue, 
-		ModeAudio, fmt, AUDIO_SIZE, 1, frame_interval,
-		video_frame_to_audio_frame(fps, out->delay + 10, 44100 * 4, AUDIO_SIZE));
+	start |= shared_queue_create(&out_data->audio_queue,
+		ModeAudio, fmt, AUDIO_SIZE, 1, interval,
+		video_frame_to_audio_frame(fps, out_data->delay + 10, 44100 * 4, AUDIO_SIZE));
 
 	struct audio_convert_info conv = {};
 	conv.format = AUDIO_FORMAT_16BIT;
 	conv.samples_per_sec = 44100;
 	conv.speakers = SPEAKERS_STEREO;
 
-	obs_output_set_audio_conversion(out->output, &conv);
+	obs_output_set_audio_conversion(out_data->output, &conv);
 
 	if (start){
-		shared_queue_set_delay(&out->video_queue, out->delay);
-		shared_queue_set_delay(&out->audio_queue, out->delay);
-		start = obs_output_begin_data_capture(out->output, 0);
+		shared_queue_set_delay(&out_data->video_queue, out_data->delay);
+		shared_queue_set_delay(&out_data->audio_queue, out_data->delay);
+		start = obs_output_begin_data_capture(out_data->output, 0);
 	}
 
 	return start;
@@ -86,27 +98,65 @@ static bool virtual_output_start(void *data)
 
 static void virtual_output_stop(void *data, uint64_t ts)
 {
-	virtual_sink *out = (virtual_sink*)data;
-	obs_output_end_data_capture(out->output);
-	shared_queue_close(&out->video_queue);
-	shared_queue_close(&out->audio_queue);
+	virtual_out_data *out_data = (virtual_out_data*)data;
+	obs_output_end_data_capture(out_data->output);
+	shared_queue_write_close(&out_data->video_queue);
+	shared_queue_write_close(&out_data->audio_queue);
 }
 
 static void virtual_video(void *param, struct video_data *frame)
 {
-	virtual_sink *output = (virtual_sink*)param;
-	output->last_video_ts = frame->timestamp;
-	shared_queue_push_video(&output->video_queue, frame->linesize,
-		output->height, frame->data, frame->timestamp);
+	if (!output_running)
+		return;
+
+	virtual_out_data *out_data = (virtual_out_data*)param;
+	out_data->last_video_ts = frame->timestamp;
+	pthread_mutex_lock(&out_data->mutex);
+	shared_queue_push_video(&out_data->video_queue, frame->linesize,
+		out_data->height, frame->data, frame->timestamp, out_data->crop);
+	pthread_mutex_unlock(&out_data->mutex);
 
 }
 
 static void virtual_audio(void *param, struct audio_data *frame)
 {
-	virtual_sink *output = (virtual_sink*)param;
+	if (!output_running)
+		return;
+
+	virtual_out_data *out_data = (virtual_out_data*)param;
 	uint64_t ts = frame->timestamp;
-	shared_queue_push_audio(&output->audio_queue, frame->frames*4,
-		frame->data[0], ts, output->last_video_ts);
+	shared_queue_push_audio(&out_data->audio_queue, frame->frames * 4,
+		frame->data[0], ts, out_data->last_video_ts);
+}
+
+static void virtual_output_update(void *data, obs_data_t *settings)
+{
+	virtual_out_data *out_data = (virtual_out_data*)data;
+	obs_video_info vif;
+	obs_get_video_info(&vif);
+	int crop[4];
+	int b_width = vif.base_width;
+	int b_height = vif.base_height;
+	crop[0]=obs_data_get_int(settings, "crop_left");
+	crop[1]=obs_data_get_int(settings, "crop_top");
+	crop[2]=obs_data_get_int(settings, "crop_right");
+	crop[3]=obs_data_get_int(settings, "crop_bottom");
+	
+	crop[0] = round_even(crop[0] * out_data->width / b_width);
+	crop[1] = round_even(crop[1] * out_data->height / b_height);
+	crop[2] = round_even(crop[2] * out_data->width / b_width);
+	crop[3] = round_even(crop[3] * out_data->height / b_height);
+
+	if (crop[0] != out_data->crop[0] ||
+		crop[1] != out_data->crop[1] ||
+		crop[2] != out_data->crop[2] ||
+		crop[3] != out_data->crop[3])
+	{
+		pthread_mutex_lock(&out_data->mutex);
+		for (int i = 0; i < 4; i++)
+			out_data->crop[i] = crop[i];
+		pthread_mutex_unlock(&out_data->mutex);
+	}
 }
 
 obs_properties_t* virtual_getproperties(void *data)
@@ -134,6 +184,7 @@ struct obs_output_info create_output_info()
 		output_info.stop = virtual_output_stop;
 		output_info.raw_video = virtual_video;
 		output_info.raw_audio = virtual_audio;
+		output_info.update = virtual_output_update;
 		output_info.get_properties = virtual_getproperties;
 
 		return output_info;
@@ -144,6 +195,9 @@ OBS_MODULE_USE_DEFAULT_LOCALE("obs-virtual_output", "en-US")
 
 bool obs_module_load(void)
 {
+	obs_output_info virtual_output_info = create_output_info();
+	obs_register_output(&virtual_output_info);
+
 	QMainWindow* main_window = (QMainWindow*)obs_frontend_get_main_window();
 	QAction *action = (QAction*)obs_frontend_add_tools_menu_qaction(
 		obs_module_text("VirtualCam"));
@@ -159,9 +213,6 @@ bool obs_module_load(void)
 
 	action->connect(action, &QAction::triggered, menu_cb);
 
-	obs_output_info virtual_output_info = create_output_info();
-	obs_register_output(&virtual_output_info);
-
 	return true;
 }
 
@@ -171,6 +222,9 @@ void obs_module_unload(void)
 
 void virtual_output_enable(int delay)
 {
+	if (delay < 0 || delay>30)
+		delay = 3;
+
 	if (!output_running){
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_int(settings, "delay_frame", delay);
@@ -186,9 +240,22 @@ void virtual_output_enable(int delay)
 void virtual_output_disable()
 {
 	if (output_running){
-		obs_output_stop(virtual_out);
-		obs_output_release(virtual_out);
 		output_running = false;
+		obs_output_stop(virtual_out);
+		obs_output_release(virtual_out);	
+	}
+}
+
+void virtual_output_set_data(int* crop)
+{
+	if (output_running){
+		obs_data_t *settings = obs_data_create();
+		obs_data_set_int(settings, "crop_left", crop[0]);
+		obs_data_set_int(settings, "crop_top", crop[1]);
+		obs_data_set_int(settings, "crop_right", crop[2]);
+		obs_data_set_int(settings, "crop_bottom", crop[3]);
+		obs_output_update(virtual_out, settings);
+		obs_data_release(settings);
 	}
 }
 

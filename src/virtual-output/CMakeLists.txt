@@ -25,18 +25,23 @@ set(OBS_FRONTEND_LIB "OBS_FRONTEND_LIB-NOTFOUND" CACHE FILEPATH "OBS frontend li
 	if(OBS_FRONTEND_LIB EQUAL "OBS_FRONTEND_LIB-NOTFOUND")
 		message(FATAL_ERROR "Could not find OBS Frontend API\'s library !")
 	endif()	
-	
+
+set(PTHREAD_LIB "PTHREAD_LIB-NOTFOUND" CACHE FILEPATH "PTHREAD library")
+	if(PTHREAD_LIB EQUAL "PTHREAD_LIB-NOTFOUND")
+		message(FATAL_ERROR "Could not find PTHREAD library !")
+	endif()		
 	
 set(virtualoutput_SOURCES
 	virtual_output.cpp
 	virtual_properties.cpp
-	../queue/share_queue.cpp
+	../queue/share_queue_write.cpp
 	)
 
 set(virtualoutput_HEADERS
 	get_format.h
 	virtual_output.h
 	virtual_properties.h
+	../queue/share_queue_write.h
 	../queue/share_queue.h
 	)
 	
@@ -55,6 +60,7 @@ include_directories(
 target_link_libraries(obs-virtualoutput
 	${LIBOBS_LIB}
 	${OBS_FRONTEND_LIB}
+	${PTHREAD_LIB}
 	Qt5::Core
 	Qt5::Widgets)
 	

@@ -8,12 +8,13 @@ set(virtualsource_SOURCES
 	virtual-cam.cpp
 	virtual-audio.cpp
 	virtua-source.def
-	../queue/share_queue.cpp
+	../queue/share_queue_read.cpp
 	)
 
 set(virtualsource_HEADERS
 	virtual-cam.h
 	virtual-audio.h
+	../queue/share_queue_read.h
 	../queue/share_queue.h
 	)
 	

@@ -5,7 +5,7 @@ extern "C"
 #include "libswscale/swscale.h" 
 };
 
-#include "../queue/share_queue.h"
+#include "../queue/share_queue_read.h"
 
 #define DECLARE_PTR(type, ptr, expr) type* ptr = (type*)(expr);
 
@@ -82,7 +82,7 @@ public:
 	HRESULT ChangeMediaType(int nMediatype);
 	bool CheckObsSetting();
 	bool ValidateResolution(long width, long height);
-	void SetConvertContext(int width, int height, AVPixelFormat fotmat);
+	void SetConvertContext();
 
 
 private:
@@ -91,19 +91,16 @@ private:
 	share_queue queue = {};
 	uint64_t obs_start_ts = 0;
 	uint64_t dshow_start_ts = 0;
-	uint8_t* src[8];
-	uint8_t* dst[1];
-	uint32_t linesize[8];
-	uint32_t dst_linesize[1];
+	uint8_t* dst;
 	int format = 0;
 	int frame_width = 0;
 	int frame_height = 0;
 	int64_t time_perframe = 0;
-	struct SwsContext *convert_ctx = nullptr;
 
 	bool use_obs_format_init = false;
 	int obs_format = 0;
 	int obs_width = 1920;
 	int obs_height = 1080;
-	int64_t obs_time_perframe = 333333;
+	int64_t obs_frame_time = 333333;
+	dst_scale_context scale_info;
 };

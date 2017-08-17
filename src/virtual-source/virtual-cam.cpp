@@ -5,6 +5,14 @@
 #include <commctrl.h>
 #include "virtual-cam.h"
 
+#define MIN_WIDTH 320
+#define MIN_HEIGHT 240
+#define MAX_WIDTH 4096
+#define MAX_HEIGHT 3072
+#define MAX_FRAMETIME 1000000
+#define MIN_FRAMETIME 166666
+
+
 CUnknown * WINAPI CVCam::CreateInstance(LPUNKNOWN lpunk, HRESULT *phr)
 {
 	ASSERT(phr);
@@ -44,12 +52,20 @@ CVCamStream::~CVCamStream()
 bool CVCamStream::CheckObsSetting()
 {
 	bool get= shared_queue_get_video_format(&obs_format, &obs_width,
-		&obs_height, &obs_time_perframe);
+		&obs_height, &obs_frame_time);
 
-	if (obs_width < 320 || obs_height < 240)
+	if (obs_frame_time < MIN_FRAMETIME || obs_frame_time > MAX_FRAMETIME)
 		return false;
-	else if (obs_time_perframe < 166666 || obs_time_perframe>1000000)
-		return false;
+
+	if (obs_height < MIN_HEIGHT){
+		obs_width = obs_width * MIN_HEIGHT / obs_height;
+		obs_height = MIN_HEIGHT;
+	}
+
+	if (obs_width < MIN_WIDTH){
+		obs_height = obs_height * MIN_WIDTH / obs_width;
+		obs_width = MIN_WIDTH;
+	}
 
 	if (obs_height % 2 != 0)
 		obs_height += 1;
@@ -63,13 +79,13 @@ HRESULT CVCamStream::ChangeMediaType(int nMediatype)
 	return S_OK;
 }
 
-void CVCamStream::SetConvertContext(int width, int height, AVPixelFormat fotmat)
+void CVCamStream::SetConvertContext()
 {
 	VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)(m_mt.Format());
-	convert_ctx = sws_getContext(width, height, fotmat,
-		pvi->bmiHeader.biWidth, pvi->bmiHeader.biHeight, AV_PIX_FMT_YUYV422, 
-		SWS_FAST_BILINEAR, NULL, NULL, NULL);
-	dst_linesize[0] = pvi->bmiHeader.biWidth * 2;
+	scale_info.dst_format = AV_PIX_FMT_YUYV422;
+	scale_info.dst_width = pvi->bmiHeader.biWidth;
+	scale_info.dst_hieght = pvi->bmiHeader.biHeight;
+	scale_info.dst_linesize[0] = pvi->bmiHeader.biWidth * 2;
 }
 
 HRESULT CVCamStream::QueryInterface(REFIID riid, void **ppv)
@@ -95,13 +111,13 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 	REFERENCE_TIME end_time = 0;
 	REFERENCE_TIME duration = 0;
 
-	hr = pms->GetPointer((BYTE**)&dst[0]);
+	hr = pms->GetPointer((BYTE**)&dst);
 
 	if (!queue.hwnd){
 		if (shared_queue_open(&queue, ModeVideo)){
 			shared_queue_get_video_format(&format, &frame_width, 
 				&frame_height, &time_perframe);
-			SetConvertContext(frame_width, frame_height, (AVPixelFormat)format);
+			SetConvertContext();
 		}
 	}
 
@@ -110,14 +126,9 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 		if (get_times > 20 || queue.header->state != OutputReady)
 			break;
 
-		get_sample = shared_queue_get_video(&queue, src, linesize, &timestamp);
+		get_sample = shared_queue_get_video(&queue, &scale_info,dst,&timestamp);
 
-		if (get_sample){
-			
-			sws_scale(convert_ctx, (const uint8_t *const *)src,
-				(const int*)linesize, 0, queue.header->frame_height,
-				(uint8_t *const *)dst, (const int*)dst_linesize);
-		}else{
+		if (!get_sample){
 			Sleep(5);
 			get_times++;
 		}
@@ -131,17 +142,15 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 	if (get_sample){
 		start_time = dshow_start_ts + (timestamp - obs_start_ts) / 100;
 		duration = time_perframe;
-	}
-	else{
+	}else{
 		int size = pms->GetActualDataLength();
-		memset(dst[0], 127, size);
+		memset(dst, 127, size);
 		start_time = prev_end_ts;
 		duration = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
 	}
 
 	if (queue.header && queue.header->state == OutputStop || get_times > 20){
-		shared_queue_close(&queue);
-		sws_freeContext(convert_ctx);
+		shared_queue_read_close(&queue,&scale_info);
 		dshow_start_ts = 0;
 		obs_start_ts = 0;
 	}
@@ -182,7 +191,7 @@ HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 	case 0:
 		pvi->bmiHeader.biWidth = obs_width;
 		pvi->bmiHeader.biHeight = obs_height;
-		pvi->AvgTimePerFrame = obs_time_perframe;
+		pvi->AvgTimePerFrame = obs_frame_time;
 		break;
 	case 1:
 		pvi->bmiHeader.biWidth = 1920;
@@ -301,8 +310,7 @@ HRESULT CVCamStream::OnThreadCreate()
 HRESULT CVCamStream::OnThreadDestroy()
 {
 	if (queue.header){
-		shared_queue_close(&queue);
-		sws_freeContext(convert_ctx);
+		shared_queue_read_close(&queue, &scale_info);
 	}
 	return NOERROR;
 }
@@ -371,7 +379,7 @@ HRESULT STDMETHODCALLTYPE CVCamStream::GetStreamCaps(int iIndex,
 	case 0:
 		pvi->bmiHeader.biWidth = obs_width;
 		pvi->bmiHeader.biHeight = obs_height;
-		pvi->AvgTimePerFrame = obs_time_perframe;
+		pvi->AvgTimePerFrame = obs_frame_time;
 		break;
 	case 1:
 		pvi->bmiHeader.biWidth = 1920;
