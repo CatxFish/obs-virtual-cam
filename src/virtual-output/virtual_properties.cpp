@@ -51,7 +51,7 @@ VirtualProperties::VirtualProperties(QWidget *parent) :
 	ui->spinBox_left->setValue(crop_left);
 	ui->spinBox_right->setValue(crop_right);
 	ui->spinBox_top->setValue(crop_top);
-	ui->spinBox_top->setValue(crop_bottom);
+	ui->spinBox_bottom->setValue(crop_bottom);
 
 	if (autostart){
 		obs_get_video_info(&video_info);
@@ -76,7 +76,7 @@ void VirtualProperties::onStart()
 	int delay = ui->horizontalSlider->value();
 	ui->spinBox->setEnabled(false);
 	ui->horizontalSlider->setEnabled(false);
-	virtual_output_enable(delay);
+	virtual_output_enable(delay+1);
 	ui->pushButtonStart->setEnabled(false);
 	ui->pushButtonStop->setEnabled(true);
 	onChangeCropValue();

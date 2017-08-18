@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>323</width>
-    <height>291</height>
+    <width>378</width>
+    <height>348</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QPushButton" name="pushButtonStart">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>250</y>
+     <x>200</x>
+     <y>300</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -29,8 +29,8 @@
   <widget class="QPushButton" name="pushButtonStop">
    <property name="geometry">
     <rect>
-     <x>230</x>
-     <y>250</y>
+     <x>280</x>
+     <y>300</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -57,8 +57,8 @@
     <rect>
      <x>20</x>
      <y>50</y>
-     <width>291</width>
-     <height>111</height>
+     <width>341</width>
+     <height>141</height>
     </rect>
    </property>
    <property name="title">
@@ -68,43 +68,12 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>10</y>
-      <width>271</width>
-      <height>91</height>
+      <y>30</y>
+      <width>321</width>
+      <height>52</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_6">
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <widget class="QLabel" name="label_source">
-         <property name="text">
-          <string>SourceRegion</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="comboBox_source">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButton_get_region">
-         <property name="text">
-          <string>Apply</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
@@ -219,13 +188,76 @@
      </item>
     </layout>
    </widget>
+   <widget class="QPushButton" name="pushButton_get_region">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>100</y>
+      <width>51</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>0</width>
+      <height>23</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>Apply</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox_source">
+    <property name="geometry">
+     <rect>
+      <x>120</x>
+      <y>100</y>
+      <width>151</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>0</width>
+      <height>23</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_source">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>101</y>
+      <width>91</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>SourceRegion</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
   </widget>
   <widget class="QGroupBox" name="groupBox_delay">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>170</y>
-     <width>291</width>
+     <y>210</y>
+     <width>341</width>
      <height>71</height>
     </rect>
    </property>
@@ -235,7 +267,7 @@
    <widget class="QSpinBox" name="spinBox">
     <property name="geometry">
      <rect>
-      <x>231</x>
+      <x>290</x>
       <y>30</y>
       <width>41</width>
       <height>22</height>
@@ -256,7 +288,7 @@
      <rect>
       <x>20</x>
       <y>30</y>
-      <width>201</width>
+      <width>251</width>
       <height>20</height>
      </rect>
     </property>
