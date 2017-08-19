@@ -22,6 +22,7 @@ Set following Cmake variables:
 - **LIBOBS_INCLUDE_DIR** (path) : Libobs  include folder
 - **LIBOBS_LIB** (filepath) : obs.lib path
 - **OBS_FRONTEND_LIB** (filepath): obs-frontend-api.lib path
+- **PTHREAD_LIB** (filepath): w32-pthread.lib path
 # Directshow output format
 **Video** 
 - YUY2
