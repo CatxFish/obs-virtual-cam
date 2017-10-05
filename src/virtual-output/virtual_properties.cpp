@@ -184,23 +184,31 @@ bool VirtualProperties::GetItemRegion(obs_sceneitem_t* item,
 
 void VirtualProperties::onGetSourceRegion()
 {
-	obs_source_t* source = obs_get_source_by_name(
-		scene_name.toUtf8().constData());
-	obs_scene_t* scene = obs_scene_from_source(source);
-	if (scene){
-		QString name = ui->comboBox_source->currentText();
-		obs_sceneitem_t* item = obs_scene_find_source(
-			scene, name.toUtf8().constData());
-		if (item){
-			int left, top, right, bottom;
-			if (GetItemRegion(item, left, top, right, bottom)){
-				ui->spinBox_left->setValue(left);
-				ui->spinBox_top->setValue(top);
-				ui->spinBox_right->setValue(right);
-				ui->spinBox_bottom->setValue(bottom);
+	if (ui->comboBox_source->currentIndex() == 0){
+		ui->spinBox_left->setValue(0);
+		ui->spinBox_top->setValue(0);
+		ui->spinBox_right->setValue(0);
+		ui->spinBox_bottom->setValue(0);
+	}
+	else{
+		obs_source_t* source = obs_get_source_by_name(
+			scene_name.toUtf8().constData());
+		obs_scene_t* scene = obs_scene_from_source(source);
+		if (scene){
+			QString name = ui->comboBox_source->currentText();
+			obs_sceneitem_t* item = obs_scene_find_source(
+				scene, name.toUtf8().constData());
+			if (item){
+				int left, top, right, bottom;
+				if (GetItemRegion(item, left, top, right, bottom)){
+					ui->spinBox_left->setValue(left);
+					ui->spinBox_top->setValue(top);
+					ui->spinBox_right->setValue(right);
+					ui->spinBox_bottom->setValue(bottom);
+				}
 			}
-		}	
-		obs_source_release(source);
+			obs_source_release(source);
+		}
 	}
 
 
@@ -214,6 +222,7 @@ void VirtualProperties::showEvent(QShowEvent *event)
 	if (scene){
 		scene_name = QString::fromUtf8(obs_source_get_name(source));
 		ui->comboBox_source->clear();
+		ui->comboBox_source->addItem("Full Canvas");
 		obs_scene_enum_items(scene, ListSource, (void*)ui->comboBox_source);
 	}
 	obs_source_release(source);

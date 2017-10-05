@@ -40,6 +40,7 @@ HRESULT CVCam::NonDelegatingQueryInterface(REFIID riid, void **ppv)
 CVCamStream::CVCamStream(HRESULT *phr, CVCam *pParent, LPCWSTR pPinName) :
 CSourceStream(NAME("Video"), phr, pParent, pPinName), parent(pParent)
 {
+	ListSupportFormat();
 	use_obs_format_init = CheckObsSetting();
 	GetMediaType(0,&m_mt);
 	prev_end_ts = 0;
@@ -54,29 +55,28 @@ bool CVCamStream::CheckObsSetting()
 	bool get= shared_queue_get_video_format(&obs_format, &obs_width,
 		&obs_height, &obs_frame_time);
 
-	if (obs_frame_time < MIN_FRAMETIME || obs_frame_time > MAX_FRAMETIME)
-		return false;
 
-	if (obs_height < MIN_HEIGHT){
-		obs_width = obs_width * MIN_HEIGHT / obs_height;
-		obs_height = MIN_HEIGHT;
+	if (get){
+		if (obs_frame_time < MIN_FRAMETIME || obs_frame_time > MAX_FRAMETIME)
+			return false;
+
+		if (obs_height < MIN_HEIGHT){
+			obs_width = obs_width * MIN_HEIGHT / obs_height;
+			obs_height = MIN_HEIGHT;
+		}
+
+		if (obs_width < MIN_WIDTH){
+			obs_height = obs_height * MIN_WIDTH / obs_width;
+			obs_width = MIN_WIDTH;
+		}
+
+		if (obs_height % 2 != 0)
+			obs_height += 1;
+
+		format_list.push_front(struct format(obs_width,obs_height, obs_frame_time));
 	}
-
-	if (obs_width < MIN_WIDTH){
-		obs_height = obs_height * MIN_WIDTH / obs_width;
-		obs_width = MIN_WIDTH;
-	}
-
-	if (obs_height % 2 != 0)
-		obs_height += 1;
 
 	return get;
-}
-
-HRESULT CVCamStream::ChangeMediaType(int nMediatype)
-{
-	GetMediaType(0,&m_mt);
-	return S_OK;
 }
 
 void CVCamStream::SetConvertContext()
@@ -166,7 +166,20 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 STDMETHODIMP CVCamStream::Notify(IBaseFilter * pSender, Quality q)
 {
 	return E_NOTIMPL;
-} 
+}
+
+bool CVCamStream::ListSupportFormat()
+{
+	if (format_list.size() > 0)
+		format_list.empty();
+	
+	format_list.push_back(struct format(1920, 1080, 333333));
+	format_list.push_back(struct format(1280, 720, 333333));
+	format_list.push_back(struct format(960, 540, 333333));
+	format_list.push_back(struct format(640, 360, 333333));
+
+	return true;
+}
 
 HRESULT CVCamStream::SetMediaType(const CMediaType *pmt)
 {
@@ -177,44 +190,21 @@ HRESULT CVCamStream::SetMediaType(const CMediaType *pmt)
 
 HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 {
-	if (!use_obs_format_init)
-		iPosition += 1;
 
-	if (iPosition < 0 || iPosition>4)
+	if (format_list.size() == 0)
+		ListSupportFormat();
+
+	if (iPosition < 0 || iPosition > format_list.size()-1)
 		return E_INVALIDARG;
 
 	DECLARE_PTR(VIDEOINFOHEADER, pvi, 
 	pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER)));
 	ZeroMemory(pvi, sizeof(VIDEOINFOHEADER));
 
-	switch (iPosition){
-	case 0:
-		pvi->bmiHeader.biWidth = obs_width;
-		pvi->bmiHeader.biHeight = obs_height;
-		pvi->AvgTimePerFrame = obs_frame_time;
-		break;
-	case 1:
-		pvi->bmiHeader.biWidth = 1920;
-		pvi->bmiHeader.biHeight = 1080;
-		pvi->AvgTimePerFrame = 333333;
-		break;
-	case 2:
-		pvi->bmiHeader.biWidth = 1280;
-		pvi->bmiHeader.biHeight = 720;
-		pvi->AvgTimePerFrame = 333333;
-		break;
-	case 3:
-		pvi->bmiHeader.biWidth = 960;
-		pvi->bmiHeader.biHeight = 540;
-		pvi->AvgTimePerFrame = 333333;
-		break;
-	case 4:
-		pvi->bmiHeader.biWidth = 640;
-		pvi->bmiHeader.biHeight = 360;
-		pvi->AvgTimePerFrame = 333333;
-		break;
-	}
 
+	pvi->bmiHeader.biWidth = format_list[iPosition].width;
+	pvi->bmiHeader.biHeight = format_list[iPosition].height;
+	pvi->AvgTimePerFrame = format_list[iPosition].time_per_frame;
 	pvi->bmiHeader.biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');;
 	pvi->bmiHeader.biBitCount = 16;
 	pvi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -327,14 +317,10 @@ HRESULT STDMETHODCALLTYPE CVCamStream::SetFormat(AM_MEDIA_TYPE *pmt)
 		return E_FAIL;
 
 	VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)(pmt->pbFormat);
-	VIDEOINFOHEADER *pvi_src = (VIDEOINFOHEADER *)m_mt.Format();
 
-	pvi_src->bmiHeader.biWidth = pvi->bmiHeader.biWidth;
-	pvi_src->bmiHeader.biHeight = pvi->bmiHeader.biHeight;
-	pvi_src->bmiHeader.biSizeImage = pvi->bmiHeader.biWidth*
-		pvi->bmiHeader.biHeight * 2;
-	pvi_src->AvgTimePerFrame = pvi->AvgTimePerFrame;
-	m_mt.SetSampleSize(pvi_src->bmiHeader.biSizeImage);
+	m_mt.SetFormat(m_mt.Format(), sizeof(VIDEOINFOHEADER));
+	format_list.push_front(struct format(pvi->bmiHeader.biWidth, 
+		pvi->bmiHeader.biHeight, pvi->AvgTimePerFrame));
 
 	IPin* pin;
 	ConnectedTo(&pin);
@@ -365,44 +351,19 @@ HRESULT STDMETHODCALLTYPE CVCamStream::GetNumberOfCapabilities(int *piCount,
 HRESULT STDMETHODCALLTYPE CVCamStream::GetStreamCaps(int iIndex, 
 	AM_MEDIA_TYPE **pmt, BYTE *pSCC)
 {
-	if (!use_obs_format_init)
-		iIndex += 1;
+	if (format_list.size() == 0)
+		ListSupportFormat();
 
-	if (iIndex < 0 || iIndex>4)
+	if (iIndex < 0 || iIndex > format_list.size() - 1)
 		return E_INVALIDARG;
 
 	*pmt = CreateMediaType(&m_mt);
 	DECLARE_PTR(VIDEOINFOHEADER, pvi, (*pmt)->pbFormat);
 
 
-	switch (iIndex){
-	case 0:
-		pvi->bmiHeader.biWidth = obs_width;
-		pvi->bmiHeader.biHeight = obs_height;
-		pvi->AvgTimePerFrame = obs_frame_time;
-		break;
-	case 1:
-		pvi->bmiHeader.biWidth = 1920;
-		pvi->bmiHeader.biHeight = 1080;
-		pvi->AvgTimePerFrame = 333333;
-		break;
-	case 2:
-		pvi->bmiHeader.biWidth = 1280;
-		pvi->bmiHeader.biHeight = 720;
-		pvi->AvgTimePerFrame = 333333;
-		break;
-	case 3:
-		pvi->bmiHeader.biWidth = 960;
-		pvi->bmiHeader.biHeight = 540;
-		pvi->AvgTimePerFrame = 333333;
-		break;
-	case 4:
-		pvi->bmiHeader.biWidth = 640;
-		pvi->bmiHeader.biHeight = 360;
-		pvi->AvgTimePerFrame = 333333;
-		break;
-	}
-
+	pvi->bmiHeader.biWidth = format_list[iIndex].width;
+	pvi->bmiHeader.biHeight = format_list[iIndex].height;
+	pvi->AvgTimePerFrame = format_list[iIndex].time_per_frame;
 	pvi->AvgTimePerFrame = 333333;
 	pvi->bmiHeader.biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');;
 	pvi->bmiHeader.biBitCount = 16;

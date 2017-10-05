@@ -6,12 +6,26 @@ extern "C"
 };
 
 #include "../queue/share_queue_read.h"
+#include <deque>
 
 #define DECLARE_PTR(type, ptr, expr) type* ptr = (type*)(expr);
 
 EXTERN_C const GUID CLSID_OBS_VirtualV;
 
 class CVCamStream;
+
+struct format
+{
+	format(int width_, int height_, int64_t time_per_frame_){
+		width = width_;
+		height = height_;
+		time_per_frame = time_per_frame_;
+	}
+	int width;
+	int height;
+	int64_t time_per_frame;
+};
+
 
 class CVCam : public CSource
 {
@@ -79,16 +93,20 @@ public:
 	HRESULT SetMediaType(const CMediaType *pmt);
 	HRESULT OnThreadCreate(void);
 	HRESULT OnThreadDestroy(void);
-	HRESULT ChangeMediaType(int nMediatype);
-	bool CheckObsSetting();
-	bool ValidateResolution(long width, long height);
-	void SetConvertContext();
-
 
 private:
+
+	bool CheckObsSetting();
+	bool ValidateResolution(long width, long height);
+	bool ListSupportFormat();
+	void SetConvertContext();
+
 	CVCam *parent;
-	REFERENCE_TIME  prev_end_ts =0;
+	std::deque<format> format_list;
+
+	//for Fillbuffer() use
 	share_queue queue = {};
+	REFERENCE_TIME  prev_end_ts =0;
 	uint64_t obs_start_ts = 0;
 	uint64_t dshow_start_ts = 0;
 	uint8_t* dst;
@@ -97,10 +115,12 @@ private:
 	int frame_height = 0;
 	int64_t time_perframe = 0;
 
+	//obs format related
 	bool use_obs_format_init = false;
 	int obs_format = 0;
 	int obs_width = 1920;
 	int obs_height = 1080;
 	int64_t obs_frame_time = 333333;
 	dst_scale_context scale_info;
+
 };

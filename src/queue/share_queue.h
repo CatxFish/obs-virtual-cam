@@ -4,7 +4,6 @@
 #include "libavutil/pixfmt.h"
 #include "libavutil/samplefmt.h"
 
-#define VIDEO_SIZE 1920*1080*4
 #define AUDIO_SIZE 4096
 #define MAPPING_NAMEV "OBSVirtualVideo"
 #define MAPPING_NAMEA "OBSVirtualAudio"
@@ -70,3 +69,33 @@ inline frame_header* get_frame_header(queue_header* qhead, int index)
 	return (frame_header*)buff;
 }
 
+inline int cal_video_buffer_size(int format,int width, int height)
+{
+	int frame_size = 0;
+	switch (format){ 
+		case AV_PIX_FMT_YUV420P:
+		case AV_PIX_FMT_NV12:
+			frame_size = width * height * 3 / 2;
+			break;
+
+		case AV_PIX_FMT_GRAY8:
+			frame_size = width * height;
+			break;
+
+		case AV_PIX_FMT_YUYV422:
+		case AV_PIX_FMT_UYVY422:
+			frame_size = width * height *2;
+			break;
+
+		case AV_PIX_FMT_RGBA:
+		case AV_PIX_FMT_BGRA:
+			frame_size = width * height * 4;
+			break;
+
+		case AV_PIX_FMT_YUV444P:
+			frame_size = width * height * 3;
+			break;	
+	}
+
+	return frame_size;
+}

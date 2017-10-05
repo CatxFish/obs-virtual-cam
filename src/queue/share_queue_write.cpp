@@ -9,36 +9,32 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 	if (!shared_queue_check(mode))
 		return false;
 
-	int size = 0;
+	int frame_size = 0;
+	int buffer_size = 0;
 
 	if (mode == ModeVideo){
-		size = sizeof(queue_header) + (sizeof(frame_header) + VIDEO_SIZE)
+		frame_size = cal_video_buffer_size(format, width, height);
+		buffer_size = sizeof(queue_header) + (sizeof(frame_header) + frame_size)
 			* qlength;
 		q->hwnd = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
-			0, size, MAPPING_NAMEV);
-	}
-	else{
-		size = sizeof(queue_header) + (sizeof(frame_header) + AUDIO_SIZE)
+			0, buffer_size, MAPPING_NAMEV);
+	}else{
+		frame_size = AUDIO_SIZE;
+		buffer_size = sizeof(queue_header) + (sizeof(frame_header) + frame_size)
 			* qlength;
 		q->hwnd = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
-			0, size, MAPPING_NAMEA);
+			0, buffer_size, MAPPING_NAMEA);
 	}
 
 	if (q->hwnd)
-		q->header = (queue_header*)MapViewOfFile(q->hwnd, FILE_MAP_ALL_ACCESS, 0, 0, size);
+		q->header = (queue_header*)MapViewOfFile(q->hwnd, FILE_MAP_ALL_ACCESS, 0, 0, buffer_size);
 
 	queue_header* q_head = q->header;
 
 	if (q_head){
-
 		q_head->header_size = sizeof(queue_header);
 		q_head->element_header_size = sizeof(frame_header);
-
-		if (mode == ModeVideo)
-			q_head->element_size = sizeof(frame_header) + VIDEO_SIZE;
-		else
-			q_head->element_size = sizeof(frame_header) + AUDIO_SIZE;
-
+		q_head->element_size = sizeof(frame_header) + frame_size;
 		q_head->format = format;
 		q_head->queue_length = qlength;
 		q_head->write_index = 0;
@@ -49,7 +45,6 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 		q->index = 0;
 		q->operating_width = width;
 		q->operating_height = height;
-
 	}
 
 	return (q->hwnd != NULL && q->header != NULL);

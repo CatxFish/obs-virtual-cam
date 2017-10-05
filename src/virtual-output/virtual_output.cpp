@@ -231,7 +231,7 @@ void virtual_output_enable(int delay)
 		virtual_out = obs_output_create("virtual_output", "VirtualOutput",
 			settings, NULL);
 		obs_output_addref(virtual_out);
-		bool a = obs_output_start(virtual_out);
+		obs_output_start(virtual_out);
 		output_running = true;
 		obs_data_release(settings);
 	}
