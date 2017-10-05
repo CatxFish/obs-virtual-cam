@@ -222,7 +222,7 @@ void VirtualProperties::showEvent(QShowEvent *event)
 	if (scene){
 		scene_name = QString::fromUtf8(obs_source_get_name(source));
 		ui->comboBox_source->clear();
-		ui->comboBox_source->addItem("Full Canvas");
+		ui->comboBox_source->addItem("Reset");
 		obs_scene_enum_items(scene, ListSource, (void*)ui->comboBox_source);
 	}
 	obs_source_release(source);

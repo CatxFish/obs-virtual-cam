@@ -8,12 +8,12 @@ The installer and compressed file can be found in [Release Page](https://github.
 
 1. Unzip OBS-VirtualCam.zip and put it to your obs-studio install folder.
 2. Run CMD as Administrator and register 32bit directshow source
-> command: regsvr32 C:\Program Files (x86)\obs-studio\bin\32bit\obs-virtualsource.dll
+> command: regsvr32 "C:\Program Files (x86)\obs-studio\bin\32bit\obs-virtualsource.dll"
 3. Do it again to register 64bit directshow source
-> command: regsvr32 C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll
+> command: regsvr32 "C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll"
 
 If you want to Remove the directshow filter , you can also use regsvr32 to do this
-> command: regsvr32 /u C:\Program Files (x86)\obs-studio\bin\32bit\obs-virtualsource.dll
+> command: regsvr32 /u "C:\Program Files (x86)\obs-studio\bin\32bit\obs-virtualsource.dll"
 # Build
 You will need cmake , visual studio2013 ,and build OBS project first. 
 Set following Cmake variables:
