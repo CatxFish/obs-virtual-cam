@@ -6,15 +6,15 @@ bool shared_queue_open(share_queue* q, int mode)
 		return false;
 
 	if (mode == ModeVideo)
-		q->hwnd = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, MAPPING_NAMEV);
+		q->hwnd = OpenFileMappingA(FILE_MAP_READ, FALSE, MAPPING_NAMEV);
 	else if (mode == ModeAudio)
-		q->hwnd = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, MAPPING_NAMEA);
+		q->hwnd = OpenFileMappingA(FILE_MAP_READ, FALSE, MAPPING_NAMEA);
 	else
 		return false;
 
 	if (q->hwnd){
 		q->header = (queue_header*)MapViewOfFile(q->hwnd,
-			FILE_MAP_ALL_ACCESS, 0, 0, 0);
+			FILE_MAP_READ, 0, 0, 0);
 	}
 	else
 		return false;
