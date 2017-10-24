@@ -113,6 +113,9 @@ bool shared_queue_get_video_format(int* format, int* width,
 	else
 		success = false;
 
+	if (*height <= 0 || *width <= 0 || *avgtime <= 0)
+		success = false;
+
 	CloseHandle(hwnd);
 	return success;
 }
