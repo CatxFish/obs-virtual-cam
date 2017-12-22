@@ -17,28 +17,41 @@ VirtualProperties::VirtualProperties(QWidget *parent) :
 	connect(ui->pushButtonStart, SIGNAL(clicked()),
 		this, SLOT(onStart()));
 	connect(ui->pushButtonStop, SIGNAL(clicked()), this, SLOT(onStop()));
-
 	connect(ui->spinBox, SIGNAL(valueChanged(int)), 
 		ui->horizontalSlider, SLOT(setValue(int)));
-
 	connect(ui->horizontalSlider, SIGNAL(valueChanged(int)), ui->spinBox,
 		SLOT(setValue(int)));
-
 	connect(ui->pushButton_get_region, SIGNAL(clicked()), this,
 		SLOT(onGetSourceRegion()));
-	connect(ui->spinBox_left, SIGNAL(valueChanged(int)), this, SLOT(onChangeCropValue()));
-	connect(ui->spinBox_top, SIGNAL(valueChanged(int)), this, SLOT(onChangeCropValue()));
-	connect(ui->spinBox_right, SIGNAL(valueChanged(int)), this, SLOT(onChangeCropValue()));
-	connect(ui->spinBox_bottom, SIGNAL(valueChanged(int)), this, SLOT(onChangeCropValue()));
+	connect(ui->spinBox_left, SIGNAL(valueChanged(int)), this, 
+		SLOT(onChangeCropValue()));
+	connect(ui->spinBox_top, SIGNAL(valueChanged(int)), this, 
+		SLOT(onChangeCropValue()));
+	connect(ui->spinBox_right, SIGNAL(valueChanged(int)), this, 
+		SLOT(onChangeCropValue()));
+	connect(ui->spinBox_bottom, SIGNAL(valueChanged(int)), this, 
+		SLOT(onChangeCropValue()));
+	connect(ui->radioButton_enable_crop, SIGNAL(toggled(bool)), this,
+		SLOT(onChangeCropEnable()));
+	connect(ui->radioButton_disable_crop, SIGNAL(toggled(bool)), this, 
+		SLOT(onChangeCropEnable()));
+	connect(ui->checkBox_horiflip, SIGNAL(stateChanged(int)), this,
+		SLOT(onClickHorizontalFlip()));
 
 	config_t* config = obs_frontend_get_global_config();
 	config_set_default_bool(config, "VirtualOutput", "AutoStart", false);
+	config_set_default_bool(config, "VirtualOutput", "HoriFlip", false);
+	config_set_default_bool(config, "VirtualOutput", "KeepRatio", false);
+	config_set_default_bool(config, "VirtualOutput", "CropEnable", false);
 	config_set_default_int(config, "VirtualOutput", "OutDelay", 3);	
 	config_set_default_int(config, "VirtualOutput", "CropLeft", 0);
 	config_set_default_int(config, "VirtualOutput", "CropRight", 0);
 	config_set_default_int(config, "VirtualOutput", "CropTop", 0);
 	config_set_default_int(config, "VirtualOutput", "CropBottom", 0);
 	bool autostart = config_get_bool(config, "VirtualOutput", "AutoStart");
+	bool hori_flip = config_get_bool(config, "VirtualOutput", "HoriFlip");
+	bool keep_ratio = config_get_bool(config, "VirtualOutput", "KeepRatio");
+	bool crop_enable = config_get_bool(config, "VirtualOutput", "CropEnable");
 	int delay = config_get_int(config, "VirtualOutput", "OutDelay");
 	int crop_left = config_get_int(config, "VirtualOutput", "CropLeft");
 	int crop_right = config_get_int(config, "VirtualOutput", "CropRight");
@@ -46,12 +59,25 @@ VirtualProperties::VirtualProperties(QWidget *parent) :
 	int crop_bottom= config_get_int(config, "VirtualOutput", "CropBottom");
 	
 	ui->checkBox_auto->setChecked(autostart);
+	ui->checkBox_horiflip->setChecked(hori_flip);
+	ui->checkBox_keepratio->setChecked(keep_ratio);
+	ui->radioButton_enable_crop->setChecked(crop_enable);
+	ui->radioButton_disable_crop->setChecked(!crop_enable);
 	ui->spinBox->setValue(delay);
 	ui->horizontalSlider->setValue(delay);
 	ui->spinBox_left->setValue(crop_left);
 	ui->spinBox_right->setValue(crop_right);
 	ui->spinBox_top->setValue(crop_top);
 	ui->spinBox_bottom->setValue(crop_bottom);
+
+	update_data.keep_ratio = keep_ratio;
+	update_data.horizontal_flip = hori_flip;
+	if (crop_enable){
+		update_data.crop[0] = crop_left;
+		update_data.crop[1] = crop_top;
+		update_data.crop[2] = crop_right;
+		update_data.crop[3] = crop_bottom;
+	}
 
 	if (autostart){
 		obs_get_video_info(&video_info);
@@ -76,32 +102,68 @@ void VirtualProperties::onStart()
 	int delay = ui->horizontalSlider->value();
 	ui->spinBox->setEnabled(false);
 	ui->horizontalSlider->setEnabled(false);
-	virtual_output_enable(delay+1);
+	virtual_output_enable(delay + 1);
 	ui->pushButtonStart->setEnabled(false);
 	ui->pushButtonStop->setEnabled(true);
-	onChangeCropValue();
+	UpdateParameter();
 }
 
 void VirtualProperties::onStop()
 {
-
 	virtual_output_disable();
 	ui->spinBox->setEnabled(true);
 	ui->horizontalSlider->setEnabled(true);
 	ui->pushButtonStart->setEnabled(true);
 	ui->pushButtonStop->setEnabled(false);
-	
+}
+
+void VirtualProperties::UpdateParameter()
+{
+	if (ui->radioButton_enable_crop->isChecked()){
+		update_data.crop[0] = ui->spinBox_left->value();
+		update_data.crop[1] = ui->spinBox_top->value();
+		update_data.crop[2] = ui->spinBox_right->value();
+		update_data.crop[3] = ui->spinBox_bottom->value();
+		ValidateRegion(update_data.crop[0], update_data.crop[1],
+			update_data.crop[2], update_data.crop[3]);		
+	}
+	else{
+		update_data.crop[0] = 0;
+		update_data.crop[1] = 0;
+		update_data.crop[2] = 0;
+		update_data.crop[3] = 0;
+	}
+	update_data.horizontal_flip = ui->checkBox_horiflip->isChecked();
+	update_data.keep_ratio = ui->checkBox_keepratio->isChecked();
+	virtual_output_set_data(&update_data);
 }
 
 void VirtualProperties::onChangeCropValue()
 {
-	int crop[4];
-	crop[0] = ui->spinBox_left->value();
-	crop[1] = ui->spinBox_top->value();
-	crop[2] = ui->spinBox_right->value();
-	crop[3] = ui->spinBox_bottom->value();
-	ValidateRegion(crop[0], crop[1], crop[2], crop[3]);
-	virtual_output_set_data(crop);
+	if (ui->radioButton_enable_crop->isChecked())
+		UpdateParameter();
+}
+
+void VirtualProperties::onChangeCropEnable()
+{
+	bool enable = ui->radioButton_enable_crop->isChecked();
+	ui->listWidget_source->setEnabled(enable);
+	ui->pushButton_get_region->setEnabled(enable);
+	ui->spinBox_bottom->setEnabled(enable);
+	ui->spinBox_top->setEnabled(enable);
+	ui->spinBox_left->setEnabled(enable);
+	ui->spinBox_right->setEnabled(enable);
+	UpdateParameter();
+}
+
+void VirtualProperties::onClickHorizontalFlip()
+{
+	UpdateParameter();
+}
+
+void VirtualProperties::onClickKeepAspectRatio()
+{
+	UpdateParameter();
 }
 
 bool VirtualProperties::GetItemRegion(obs_sceneitem_t* item,
@@ -184,34 +246,25 @@ bool VirtualProperties::GetItemRegion(obs_sceneitem_t* item,
 
 void VirtualProperties::onGetSourceRegion()
 {
-	if (ui->comboBox_source->currentIndex() == 0){
-		ui->spinBox_left->setValue(0);
-		ui->spinBox_top->setValue(0);
-		ui->spinBox_right->setValue(0);
-		ui->spinBox_bottom->setValue(0);
-	}
-	else{
-		obs_source_t* source = obs_get_source_by_name(
-			scene_name.toUtf8().constData());
-		obs_scene_t* scene = obs_scene_from_source(source);
-		if (scene){
-			QString name = ui->comboBox_source->currentText();
-			obs_sceneitem_t* item = obs_scene_find_source(
-				scene, name.toUtf8().constData());
-			if (item){
-				int left, top, right, bottom;
-				if (GetItemRegion(item, left, top, right, bottom)){
-					ui->spinBox_left->setValue(left);
-					ui->spinBox_top->setValue(top);
-					ui->spinBox_right->setValue(right);
-					ui->spinBox_bottom->setValue(bottom);
-				}
+	obs_source_t* source = obs_get_source_by_name(
+		scene_name.toUtf8().constData());
+	obs_scene_t* scene = obs_scene_from_source(source);
+	QListWidgetItem * list_item = ui->listWidget_source->currentItem();
+	if (scene && list_item){
+		QString name = list_item->text();
+		obs_sceneitem_t* item = obs_scene_find_source(
+			scene, name.toUtf8().constData());
+		if (item){
+			int left, top, right, bottom;
+			if (GetItemRegion(item, left, top, right, bottom)){
+				ui->spinBox_left->setValue(left);
+				ui->spinBox_top->setValue(top);
+				ui->spinBox_right->setValue(right);
+				ui->spinBox_bottom->setValue(bottom);
 			}
-			obs_source_release(source);
 		}
+		obs_source_release(source);
 	}
-
-
 }
 
 void VirtualProperties::showEvent(QShowEvent *event)
@@ -221,9 +274,8 @@ void VirtualProperties::showEvent(QShowEvent *event)
 	obs_scene_t* scene = obs_scene_from_source(source);
 	if (scene){
 		scene_name = QString::fromUtf8(obs_source_get_name(source));
-		ui->comboBox_source->clear();
-		ui->comboBox_source->addItem("Reset");
-		obs_scene_enum_items(scene, ListSource, (void*)ui->comboBox_source);
+		ui->listWidget_source->clear();
+		obs_scene_enum_items(scene, ListSource, (void*)ui->listWidget_source);
 	}
 	obs_source_release(source);
 
@@ -270,10 +322,10 @@ void VirtualProperties::ValidateRegion(int& left, int& top, int& right,
 bool VirtualProperties::ListSource(obs_scene_t* scene, 
 	obs_sceneitem_t* item, void* ui)
 {
-	QComboBox* cb = (QComboBox*)ui;
+	QListWidget* cl = (QListWidget*)ui;
 	obs_source_t* source = obs_sceneitem_get_source(item);
 	const char* name = obs_source_get_name(source);
-	cb->addItem(name);
+	cl->addItem(name);
 	return true;
 }
 
@@ -282,12 +334,18 @@ void VirtualProperties::SaveSetting()
 	config_t* config = obs_frontend_get_global_config();
 	if (config){
 		bool autostart = ui->checkBox_auto->isChecked();
+		bool hori_flip = ui->checkBox_horiflip->isChecked();
+		bool keep_ratio = ui->checkBox_keepratio->isChecked();
+		bool crop_enable = ui->radioButton_enable_crop->isChecked();
 		int delay = ui->horizontalSlider->value();
 		int crop_left = ui->spinBox_left->value();
 		int crop_right = ui->spinBox_right->value();
 		int crop_top = ui->spinBox_top->value();
 		int crop_bottom = ui->spinBox_bottom->value();
 		config_set_bool(config, "VirtualOutput", "AutoStart", autostart);
+		config_set_bool(config, "VirtualOutput", "HoriFlip", hori_flip);
+		config_set_bool(config, "VirtualOutput", "KeepRatio", keep_ratio);
+		config_set_bool(config, "VirtualOutput", "CropEnable", crop_enable);
 		config_set_int(config, "VirtualOutput", "OutDelay", delay);
 		config_set_int(config, "VirtualOutput", "CropLeft", crop_left);
 		config_set_int(config, "VirtualOutput", "CropRight", crop_right);

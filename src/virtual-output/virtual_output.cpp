@@ -9,6 +9,7 @@
 #include "virtual_output.h"
 #include "virtual_properties.h"
 #include "get_format.h"
+#include "hflip.h"
 #include "math.h"
 
 #define round_even(x){x&(-2)}
@@ -23,6 +24,9 @@ struct virtual_out_data {
 	int delay = 0;
 	int crop[4]; //left,top,right,bottom
 	int64_t last_video_ts = 0;
+	bool hori_flip;
+	bool keep_ratio;
+	FlipContext flip_ctx;
 };
 
 VirtualProperties* virtual_prop;
@@ -37,8 +41,12 @@ static const char *virtual_output_getname(void *unused)
 
 static void virtual_output_destroy(void *data)
 {
+	output_running = false;
 	virtual_out_data *out_data = (virtual_out_data*)data;
 	if (out_data){
+		pthread_mutex_lock(&out_data->mutex);
+		release_flip_filter(&out_data->flip_ctx);
+		pthread_mutex_unlock(&out_data->mutex);
 		pthread_mutex_destroy(&out_data->mutex);
 		bfree(data);
 	}
@@ -87,6 +95,8 @@ static bool virtual_output_start(void *data)
 
 	obs_output_set_audio_conversion(out_data->output, &conv);
 
+	init_flip_filter(&out_data->flip_ctx, out_data->width, out_data->height, fmt);
+
 	if (start){
 		shared_queue_set_delay(&out_data->video_queue, out_data->delay);
 		shared_queue_set_delay(&out_data->audio_queue, out_data->delay);
@@ -112,8 +122,17 @@ static void virtual_video(void *param, struct video_data *frame)
 	virtual_out_data *out_data = (virtual_out_data*)param;
 	out_data->last_video_ts = frame->timestamp;
 	pthread_mutex_lock(&out_data->mutex);
-	shared_queue_push_video(&out_data->video_queue, frame->linesize,
-		out_data->height, frame->data, frame->timestamp, out_data->crop);
+	if (out_data->hori_flip){
+		flip_frame(&out_data->flip_ctx, frame->data, frame->linesize);
+		shared_queue_push_video(&out_data->video_queue, 
+			(uint32_t*)out_data->flip_ctx.frame_out->linesize,out_data->height, 
+			out_data->flip_ctx.frame_out->data, frame->timestamp, out_data->crop);
+		unref_flip_frame(&out_data->flip_ctx);
+	}
+	else{
+		shared_queue_push_video(&out_data->video_queue, frame->linesize,
+			out_data->height, frame->data, frame->timestamp, out_data->crop);
+	}
 	pthread_mutex_unlock(&out_data->mutex);
 
 }
@@ -137,11 +156,20 @@ static void virtual_output_update(void *data, obs_data_t *settings)
 	int crop[4];
 	int b_width = vif.base_width;
 	int b_height = vif.base_height;
-	crop[0]=obs_data_get_int(settings, "crop_left");
-	crop[1]=obs_data_get_int(settings, "crop_top");
-	crop[2]=obs_data_get_int(settings, "crop_right");
-	crop[3]=obs_data_get_int(settings, "crop_bottom");
+	bool hori_flip = obs_data_get_bool(settings, "hori-flip");
+	bool keep_ratio = obs_data_get_bool(settings, "keep-ratio");
+
+	if (hori_flip){
+		crop[0] = obs_data_get_int(settings, "crop_right");
+		crop[2] = obs_data_get_int(settings, "crop_left");
+	}
+	else{
+		crop[0] = obs_data_get_int(settings, "crop_left");
+		crop[2] = obs_data_get_int(settings, "crop_right");
+	}
 	
+	crop[1] = obs_data_get_int(settings, "crop_top");
+	crop[3] = obs_data_get_int(settings, "crop_bottom");
 	crop[0] = round_even(crop[0] * out_data->width / b_width);
 	crop[1] = round_even(crop[1] * out_data->height / b_height);
 	crop[2] = round_even(crop[2] * out_data->width / b_width);
@@ -150,9 +178,13 @@ static void virtual_output_update(void *data, obs_data_t *settings)
 	if (crop[0] != out_data->crop[0] ||
 		crop[1] != out_data->crop[1] ||
 		crop[2] != out_data->crop[2] ||
-		crop[3] != out_data->crop[3])
+		crop[3] != out_data->crop[3] ||
+		hori_flip != out_data->hori_flip ||
+		keep_ratio != out_data->keep_ratio)
 	{
 		pthread_mutex_lock(&out_data->mutex);
+		out_data->hori_flip = hori_flip;
+		out_data->keep_ratio = keep_ratio;
 		for (int i = 0; i < 4; i++)
 			out_data->crop[i] = crop[i];
 		pthread_mutex_unlock(&out_data->mutex);
@@ -246,14 +278,16 @@ void virtual_output_disable()
 	}
 }
 
-void virtual_output_set_data(int* crop)
+void virtual_output_set_data(struct vcam_update_data* update_data)
 {
 	if (output_running){
 		obs_data_t *settings = obs_data_create();
-		obs_data_set_int(settings, "crop_left", crop[0]);
-		obs_data_set_int(settings, "crop_top", crop[1]);
-		obs_data_set_int(settings, "crop_right", crop[2]);
-		obs_data_set_int(settings, "crop_bottom", crop[3]);
+		obs_data_set_bool(settings, "hori-flip", update_data->horizontal_flip);
+		obs_data_set_bool(settings, "keep-ratio", update_data->keep_ratio);
+		obs_data_set_int(settings, "crop_left", update_data->crop[0]);
+		obs_data_set_int(settings, "crop_top", update_data->crop[1]);
+		obs_data_set_int(settings, "crop_right", update_data->crop[2]);
+		obs_data_set_int(settings, "crop_bottom", update_data->crop[3]);
 		obs_output_update(virtual_out, settings);
 		obs_data_release(settings);
 	}
