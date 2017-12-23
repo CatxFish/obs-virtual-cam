@@ -324,7 +324,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Horizontal flip</string>
+    <string>HorizontalFlip</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="checkBox_keepratio">
@@ -332,12 +332,12 @@
     <rect>
      <x>240</x>
      <y>20</y>
-     <width>151</width>
+     <width>171</width>
      <height>20</height>
     </rect>
    </property>
    <property name="text">
-    <string>Keep aspect ratio</string>
+    <string>KeepAspectRatio</string>
    </property>
   </widget>
  </widget>

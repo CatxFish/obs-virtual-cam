@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(obs-virtualoutput)
 
-find_package(FFmpeg COMPONENTS avutil REQUIRED)
+find_package(FFmpeg COMPONENTS avfilter REQUIRED)
 
 set(CMAKE_PREFIX_PATH "${QTDIR}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -34,6 +34,7 @@ set(PTHREAD_LIB "PTHREAD_LIB-NOTFOUND" CACHE FILEPATH "PTHREAD library")
 set(virtualoutput_SOURCES
 	virtual_output.cpp
 	virtual_properties.cpp
+	hflip.cpp
 	../queue/share_queue_write.cpp
 	)
 
@@ -41,6 +42,7 @@ set(virtualoutput_HEADERS
 	get_format.h
 	virtual_output.h
 	virtual_properties.h
+	hflip.h
 	../queue/share_queue_write.h
 	../queue/share_queue.h
 	)
@@ -58,6 +60,7 @@ include_directories(
 	${Qt5Widgets_INCLUDES})
 		
 target_link_libraries(obs-virtualoutput
+	${FFMPEG_LIBRARIES}
 	${LIBOBS_LIB}
 	${OBS_FRONTEND_LIB}
 	${PTHREAD_LIB}

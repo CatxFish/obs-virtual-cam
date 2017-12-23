@@ -139,8 +139,8 @@ bool shared_queue_push_video(share_queue* q, uint32_t* linesize,
 
 	case AV_PIX_FMT_YUV444P:
 		src[0] = data[0] + crop[1] * linesize[0] + crop[0];
-		src[0] = data[1] + crop[1] * linesize[1] + crop[0];
-		src[0] = data[2] + crop[1] * linesize[2] + crop[0];
+		src[1] = data[1] + crop[1] * linesize[1] + crop[0];
+		src[2] = data[2] + crop[1] * linesize[2] + crop[0];
 		frame->linesize[0] = width;
 		frame->linesize[1] = width;
 		frame->linesize[2] = width;
