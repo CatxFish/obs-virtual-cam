@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(obs-virtualoutput)
 
-find_package(FFmpeg COMPONENTS avfilter REQUIRED)
+find_package(FFmpeg COMPONENTS avutil avfilter REQUIRED)
 
 set(CMAKE_PREFIX_PATH "${QTDIR}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
