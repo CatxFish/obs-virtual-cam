@@ -37,6 +37,8 @@ VirtualProperties::VirtualProperties(QWidget *parent) :
 		SLOT(onChangeCropEnable()));
 	connect(ui->checkBox_horiflip, SIGNAL(stateChanged(int)), this,
 		SLOT(onClickHorizontalFlip()));
+	connect(ui->checkBox_keepratio, SIGNAL(stateChanged(int)), this,
+		SLOT(onClickKeepAspectRatio()));
 
 	config_t* config = obs_frontend_get_global_config();
 	config_set_default_bool(config, "VirtualOutput", "AutoStart", false);

@@ -41,6 +41,8 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 		q_head->state = OutputStart;
 		q_head->frame_time = frame_time;
 		q_head->delay_frame = 5;
+		q_head->canvas_width = width;
+		q_head->canvas_height = height;
 		q->mode = mode;
 		q->index = 0;
 		q->operating_width = width;
@@ -219,5 +221,17 @@ bool shared_queue_set_delay(share_queue* q, int delay_video_frame)
 		return false;
 
 	q->header->delay_frame = delay_video_frame;
+	return true;
+}
+
+bool shared_queue_set_keep_ratio(share_queue* q, bool keep_ratio)
+{
+	if (!q || !q->header)
+		return false;
+
+	if (keep_ratio)
+		q->header->aspect_ratio_type = 1;
+	else
+		q->header->aspect_ratio_type = 0;
 	return true;
 }

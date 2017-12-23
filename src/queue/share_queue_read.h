@@ -10,8 +10,10 @@ struct dst_scale_context
 	struct SwsContext *convert_ctx = nullptr;
 	int dst_format = 0;
 	int dst_width = 0;
-	int dst_hieght = 0;
-	int dst_linesize[4];
+	int dst_height = 0;
+	int dst_offset = 0;
+	int aspect_ratio_type = 0;
+	int dst_linesize[4];	
 };
 
 bool shared_queue_open(share_queue* q, int mode);

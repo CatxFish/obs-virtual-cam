@@ -187,6 +187,7 @@ static void virtual_output_update(void *data, obs_data_t *settings)
 		out_data->keep_ratio = keep_ratio;
 		for (int i = 0; i < 4; i++)
 			out_data->crop[i] = crop[i];
+		shared_queue_set_keep_ratio(&out_data->video_queue, keep_ratio);
 		pthread_mutex_unlock(&out_data->mutex);
 	}
 }

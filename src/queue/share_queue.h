@@ -48,6 +48,9 @@ struct queue_header
 	int element_size;
 	int element_header_size;
 	int delay_frame;
+	int canvas_width;
+	int canvas_height;
+	int aspect_ratio_type;
 	uint64_t last_ts;
 	int64_t frame_time;
 };

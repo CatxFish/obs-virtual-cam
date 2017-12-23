@@ -84,7 +84,7 @@ void CVCamStream::SetConvertContext()
 	VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)(m_mt.Format());
 	scale_info.dst_format = AV_PIX_FMT_YUYV422;
 	scale_info.dst_width = pvi->bmiHeader.biWidth;
-	scale_info.dst_hieght = pvi->bmiHeader.biHeight;
+	scale_info.dst_height = pvi->bmiHeader.biHeight;
 	scale_info.dst_linesize[0] = pvi->bmiHeader.biWidth * 2;
 }
 
