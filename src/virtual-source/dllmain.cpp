@@ -121,12 +121,9 @@ void RegisterDummyDevicePath()
 	RegOpenKeyEx(HKEY_LOCAL_MACHINE, str_video_capture_device_key.c_str(), 0,
 		KEY_ALL_ACCESS, &hKey);
 		
-	
 	LPCTSTR value = TEXT("DevicePath");
 	LPCTSTR data = "obs:virtualcam";
-	if (ERROR_SUCCESS == RegSetValueEx(hKey, value, 0, REG_SZ, (LPBYTE)data, strlen(data) + 1))
-		::MessageBoxA(0, "ok", "ok", MB_OK);
-
+	RegSetValueEx(hKey, value, 0, REG_SZ, (LPBYTE)data, strlen(data) + 1);
 	RegCloseKey(hKey);
 }
 
