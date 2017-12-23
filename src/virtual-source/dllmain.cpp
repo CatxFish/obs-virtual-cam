@@ -99,6 +99,37 @@ CFactoryTemplate g_Templates[] =
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
+void RegisterDummyDevicePath()
+{
+	HKEY hKey;
+	std::string str_video_capture_device_key(
+		"SOFTWARE\\Classes\\CLSID\\{860BB310-5D01-11d0-BD3B-00A0C911CE86}\\Instance\\");
+
+	LPOLESTR olestr_CLSID;
+	StringFromCLSID(CLSID_OBS_VirtualV, &olestr_CLSID);
+
+	std::wstring wstr_CLSID(olestr_CLSID);
+
+	int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr_CLSID[0], 
+		(int)wstr_CLSID.size(), NULL, 0, NULL, NULL);
+	std::string str2(size_needed, 0);
+	WideCharToMultiByte(CP_UTF8, 0, &wstr_CLSID[0], (int)wstr_CLSID.size(), 
+		&str2[0], size_needed, NULL, NULL);
+
+	str_video_capture_device_key.append(str2);
+	
+	RegOpenKeyEx(HKEY_LOCAL_MACHINE, str_video_capture_device_key.c_str(), 0,
+		KEY_ALL_ACCESS, &hKey);
+		
+	
+	LPCTSTR value = TEXT("DevicePath");
+	LPCTSTR data = "obs:virtualcam";
+	if (ERROR_SUCCESS == RegSetValueEx(hKey, value, 0, REG_SZ, (LPBYTE)data, strlen(data) + 1))
+		::MessageBoxA(0, "ok", "ok", MB_OK);
+
+	RegCloseKey(hKey);
+}
+
 STDAPI RegisterFilters(BOOL bRegister)
 {
 	HRESULT hr = NOERROR;
@@ -144,6 +175,9 @@ STDAPI RegisterFilters(BOOL bRegister)
 				hr = fm->UnregisterFilter(&CLSID_VideoInputDeviceCategory, 0, CLSID_OBS_VirtualV);
 			}
 		}
+
+		if (SUCCEEDED(hr) && bRegister)
+			RegisterDummyDevicePath();
 
 		if (fm)
 			fm->Release();
