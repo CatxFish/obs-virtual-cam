@@ -173,8 +173,9 @@ STDAPI RegisterFilters(BOOL bRegister)
 			}
 		}
 
-		if (SUCCEEDED(hr) && bRegister)
-			RegisterDummyDevicePath();
+		// Dummy DevicePath conflicts with Skype
+		/*if (SUCCEEDED(hr) && bRegister)
+			RegisterDummyDevicePath();*/
 
 		if (fm)
 			fm->Release();
