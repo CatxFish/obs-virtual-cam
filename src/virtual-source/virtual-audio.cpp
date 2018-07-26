@@ -196,7 +196,7 @@ HRESULT CVAudioStream::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERT
 	CheckPointer(pProperties, E_POINTER);
 
 	WAVEFORMATEX* pwfex = (WAVEFORMATEX*)m_mt.Format();
-	if (pwfex){
+	if (pwfex) {
 
 		pProperties->cBuffers = 1;
 		pProperties->cbBuffer = AUDIO_BUFFER_SIZE;
@@ -217,10 +217,8 @@ HRESULT CVAudioStream::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERT
 		hr = pAlloc->SetProperties(pProperties, &Actual);
 		if (SUCCEEDED(hr))
 			if (Actual.cbBuffer < pProperties->cbBuffer)
-				hr = E_FAIL;
-
-		
-	}else{
+				hr = E_FAIL;	
+	} else {
 		hr = E_POINTER;
 	}
 	return hr;
@@ -250,8 +248,7 @@ HRESULT STDMETHODCALLTYPE CVAudioStream::SetFormat(AM_MEDIA_TYPE *pmt)
 
 	IPin* pin;
 	ConnectedTo(&pin);
-	if (pin)
-	{
+	if (pin) {
 		IFilterGraph *pGraph = parent->GetGraph();
 		pGraph->Reconnect(this);
 	}
@@ -299,19 +296,18 @@ HRESULT STDMETHODCALLTYPE CVAudioStream::GetStreamCaps(int iIndex, AM_MEDIA_TYPE
 	pascc->MinimumSampleFrequency = SAMPLE_RATE;
 	pascc->SampleFrequencyGranularity = SAMPLE_RATE;
 
-
 	return hr;
 }
 
 STDMETHODIMP CVAudioStream::SuggestAllocatorProperties(const ALLOCATOR_PROPERTIES* pprop)
 {
 	HRESULT hr = S_OK;
-	if (pprop){
+	if (pprop) {
 		if (IsConnected())
 			hr = VFW_E_ALREADY_CONNECTED;
 		else
 			m_allocProp = *pprop;
-	}else
+	} else
 		hr = E_POINTER;
 	
 	return hr;
@@ -325,9 +321,9 @@ STDMETHODIMP CVAudioStream::GetAllocatorProperties(ALLOCATOR_PROPERTIES* pprop)
 			*pprop = m_allocProp;
 		else
 			hr = VFW_E_NOT_CONNECTED;
-	}
-	else
+	} else
 		hr = E_POINTER;
+
 	return hr;
 }
 

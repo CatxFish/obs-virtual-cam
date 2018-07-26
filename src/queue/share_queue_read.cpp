@@ -12,14 +12,13 @@ bool shared_queue_open(share_queue* q, int mode)
 	else
 		return false;
 
-	if (q->hwnd){
-		q->header = (queue_header*)MapViewOfFile(q->hwnd,
-			FILE_MAP_READ, 0, 0, 0);
-	}
-	else
+	if (q->hwnd) {
+		q->header = (queue_header*)MapViewOfFile(q->hwnd, FILE_MAP_READ, 0, 0, 
+			0);
+	} else
 		return false;
 
-	if (q->header == nullptr){
+	if (q->header == nullptr) {
 		CloseHandle(q->hwnd);
 		q->hwnd = nullptr;
 		return false;
@@ -31,7 +30,7 @@ bool shared_queue_open(share_queue* q, int mode)
 
 void shared_queue_read_close(share_queue* q, dst_scale_context* scale_info)
 {
-	if (q && q->header){
+	if (q && q->header) {
 		UnmapViewOfFile(q->header);
 		CloseHandle(q->hwnd);
 		q->header = nullptr;
@@ -39,7 +38,7 @@ void shared_queue_read_close(share_queue* q, dst_scale_context* scale_info)
 		q->index = -1;
 	}
 
-	if (scale_info){
+	if (scale_info) {
 		sws_freeContext(scale_info->convert_ctx);
 		scale_info->convert_ctx = nullptr;
 	}
@@ -51,13 +50,12 @@ bool share_queue_init_index(share_queue* q)
 		return false;
 
 
-	if (q->mode == ModeVideo){
+	if (q->mode == ModeVideo) {
 		q->index = q->header->write_index - q->header->delay_frame;
 		if (q->index < 0)
 			q->index += q->header->queue_length;
 
-	}
-	else if (q->mode == ModeAudio){
+	} else if (q->mode == ModeAudio) {
 		int write_index = q->header->write_index;
 		int delay_frame = q->header->delay_frame;
 		int64_t frame_time = q->header->frame_time;
@@ -67,7 +65,7 @@ bool share_queue_init_index(share_queue* q)
 		int index = write_index;
 		uint64_t frame_ts = 0;
 
-		do{
+		do {
 			index--;
 			if (index < 0)
 				index += q->header->queue_length;
@@ -77,12 +75,11 @@ bool share_queue_init_index(share_queue* q)
 
 		} while (frame_ts > start_ts && index != write_index);
 
-		if (index == write_index){
+		if (index == write_index) {
 			q->index = write_index - q->header->queue_length / 2;
 			if (q->index < 0)
 				q->index += q->header->queue_length;
-		}
-		else
+		} else
 			q->index = index;
 	}
 
@@ -102,14 +99,13 @@ bool shared_queue_get_video_format(int* format, int* width,
 	else
 		return false;
 
-	if (header){
+	if (header) {
 		*format = header->format;
 		*avgtime = (header->frame_time) / 100;
 		*width = header->canvas_width;
 		*height = header->canvas_height;
 		UnmapViewOfFile(header);
-	}
-	else
+	} else
 		success = false;
 
 	if (*height <= 0 || *width <= 0 || *avgtime <= 0)
@@ -122,8 +118,8 @@ bool shared_queue_get_video_format(int* format, int* width,
 void clear_image(uint8_t* dst, int width, int height, int linesize)
 {
 	int black_value = 0x80008000;
-	for (int i = 0; i < height; i++){
-		for (int j = 0; j < width / 2; j++){
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width / 2; j++) {
 			memcpy(dst + j * 4, &black_value, 4);
 		}
 		dst += linesize;
@@ -136,36 +132,33 @@ void set_convert_context(share_queue* q, dst_scale_context* scale_info,
 	int dst_width = 0;
 	int dst_height = 0;
 
-	if (q->header->aspect_ratio_type == 0){
+	if (q->header->aspect_ratio_type == 0) {
 		dst_width = scale_info->dst_width;
 		dst_height = scale_info->dst_height;
 		scale_info->dst_offset = 0;
-	}
-	else{
+	} else {
 		double x_ratio = (double)scale_info->dst_width / src_width;
 		double y_ratio = (double)scale_info->dst_height / src_height;
-		if (x_ratio > y_ratio){
-			dst_width = min(scale_info->dst_width,src_width * y_ratio);
-			dst_width = (dst_width >> 3) << 3;  //align 8
+		if (x_ratio > y_ratio) {
+			dst_width = min(scale_info->dst_width, src_width * y_ratio);
+			dst_width = (dst_width >> 3) << 3; //align 8
 			dst_height = scale_info->dst_height;
-			scale_info->dst_offset = ((scale_info->dst_width - dst_width) 
+			scale_info->dst_offset = ((scale_info->dst_width - dst_width)
 				>> 2) << 2;
-		}
-		else if(x_ratio < y_ratio){
-			dst_height = min(scale_info->dst_height,src_height * x_ratio);
+		} else if(x_ratio < y_ratio) {
+			dst_height = min(scale_info->dst_height, src_height * x_ratio);
 			dst_width = scale_info->dst_width;
 			scale_info->dst_offset = (scale_info->dst_height - dst_height) / 2 
 				* scale_info->dst_linesize[0];
-		}
-		else{
+		} else {
 			dst_width = scale_info->dst_width;
 			dst_height = scale_info->dst_height;
 			scale_info->dst_offset = 0;
 		}
 	}
 
-	scale_info->convert_ctx = sws_getContext(src_width,src_height, 
-		(AVPixelFormat)q->header->format,dst_width, dst_height,
+	scale_info->convert_ctx = sws_getContext(src_width, src_height,
+		(AVPixelFormat)q->header->format, dst_width, dst_height,
 		(AVPixelFormat)scale_info->dst_format, SWS_FAST_BILINEAR,
 		NULL, NULL, NULL);
 	q->operating_width = src_width;
@@ -222,10 +215,9 @@ bool shared_queue_get_video(share_queue* q, dst_scale_context* scale_info,
 	}
 
 	if (!scale_info->convert_ctx ||
-		frame->frame_width != q->operating_width ||
-		frame->frame_height != q->operating_height||
-		q->header->aspect_ratio_type != scale_info->aspect_ratio_type)
-	{
+	    frame->frame_width != q->operating_width ||
+	    frame->frame_height != q->operating_height||
+	    q->header->aspect_ratio_type != scale_info->aspect_ratio_type) {
 		sws_freeContext(scale_info->convert_ctx);
 		set_convert_context(q, scale_info, frame->frame_width,
 			frame->frame_height);
@@ -236,7 +228,7 @@ bool shared_queue_get_video(share_queue* q, dst_scale_context* scale_info,
 
 	dst += scale_info->dst_offset;
 
-	sws_scale(scale_info->convert_ctx, 
+	sws_scale(scale_info->convert_ctx,
 		(const uint8_t *const *)data,
 		(const int*)frame->linesize, 0, q->operating_height,
 		(uint8_t *const *)&dst, (const int*)scale_info->dst_linesize);
@@ -268,11 +260,10 @@ bool shared_queue_get_audio(share_queue* q, uint8_t* dst,
 	frame_header* frame = get_frame_header(q->header, q->index);
 	uint8_t* src = (uint8_t*)frame + q->header->element_header_size;
 
-	if (frame->linesize[0] <= max_size){
+	if (frame->linesize[0] <= max_size) {
 		memcpy(dst, src, frame->linesize[0]);
 		q->operating_width = frame->linesize[0];
-	}
-	else{
+	} else {
 		memset(dst, 0, q->operating_width);
 		q->operating_width = max_size;
 	}

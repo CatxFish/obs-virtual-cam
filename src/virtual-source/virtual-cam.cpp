@@ -56,16 +56,16 @@ bool CVCamStream::CheckObsSetting()
 		&obs_height, &obs_frame_time);
 
 
-	if (get){
+	if (get) {
 		if (obs_frame_time < MIN_FRAMETIME || obs_frame_time > MAX_FRAMETIME)
 			return false;
 
-		if (obs_height < MIN_HEIGHT){
+		if (obs_height < MIN_HEIGHT) {
 			obs_width = obs_width * MIN_HEIGHT / obs_height;
 			obs_height = MIN_HEIGHT;
 		}
 
-		if (obs_width < MIN_WIDTH){
+		if (obs_width < MIN_WIDTH) {
 			obs_height = obs_height * MIN_WIDTH / obs_width;
 			obs_width = MIN_WIDTH;
 		}
@@ -73,7 +73,8 @@ bool CVCamStream::CheckObsSetting()
 		if (obs_height % 2 != 0)
 			obs_height += 1;
 
-		format_list.push_front(struct format(obs_width,obs_height, obs_frame_time));
+		format_list.push_front(struct format(obs_width, obs_height, 
+			obs_frame_time));
 	}
 
 	return get;
@@ -106,51 +107,52 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 	HRESULT hr;
 	bool get_sample = false;
 	int get_times = 0;
-	uint64_t timestamp=0;
-	REFERENCE_TIME start_time=0;
+	uint64_t timestamp = 0;
+	REFERENCE_TIME start_time = 0;
 	REFERENCE_TIME end_time = 0;
 	REFERENCE_TIME duration = 0;
 
 	hr = pms->GetPointer((BYTE**)&dst);
 
-	if (!queue.hwnd){
-		if (shared_queue_open(&queue, ModeVideo)){
+	if (!queue.hwnd) {
+		if (shared_queue_open(&queue, ModeVideo)) {
 			shared_queue_get_video_format(&format, &frame_width, 
 				&frame_height, &time_perframe);
 			SetConvertContext();
 		}
 	}
 
-	while (queue.header && !get_sample){
+	while (queue.header && !get_sample) {
 
 		if (get_times > 20 || queue.header->state != OutputReady)
 			break;
 
-		get_sample = shared_queue_get_video(&queue, &scale_info,dst,&timestamp);
+		get_sample = shared_queue_get_video(&queue, &scale_info, dst, 
+			&timestamp);
 
-		if (!get_sample){
+		if (!get_sample) {
 			Sleep(5);
 			get_times++;
 		}
 	} 
 	
-	if (get_sample && !obs_start_ts){
+	if (get_sample && !obs_start_ts) {
 		obs_start_ts = timestamp;
 		dshow_start_ts = prev_end_ts;
 	}
 
-	if (get_sample){
+	if (get_sample) {
 		start_time = dshow_start_ts + (timestamp - obs_start_ts) / 100;
 		duration = time_perframe;
-	}else{
+	} else {
 		int size = pms->GetActualDataLength();
 		memset(dst, 127, size);
 		start_time = prev_end_ts;
 		duration = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
 	}
 
-	if (queue.header && queue.header->state == OutputStop || get_times > 20){
-		shared_queue_read_close(&queue,&scale_info);
+	if (queue.header && queue.header->state == OutputStop || get_times > 20) {
+		shared_queue_read_close(&queue, &scale_info);
 		dshow_start_ts = 0;
 		obs_start_ts = 0;
 	}
@@ -205,7 +207,7 @@ HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 	pvi->bmiHeader.biWidth = format_list[iPosition].width;
 	pvi->bmiHeader.biHeight = format_list[iPosition].height;
 	pvi->AvgTimePerFrame = format_list[iPosition].time_per_frame;
-	pvi->bmiHeader.biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');;
+	pvi->bmiHeader.biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');
 	pvi->bmiHeader.biBitCount = 16;
 	pvi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	pvi->bmiHeader.biPlanes = 1;
@@ -256,7 +258,7 @@ HRESULT CVCamStream::CheckMediaType(const CMediaType *pMediaType)
 
 bool CVCamStream::ValidateResolution(long width,long height)
 {
-	if (width < 320 || height <240)
+	if (width < 320 || height < 240)
 		return false;
 	else if (width > 4096)
 		return false;
@@ -299,9 +301,9 @@ HRESULT CVCamStream::OnThreadCreate()
 
 HRESULT CVCamStream::OnThreadDestroy()
 {
-	if (queue.header){
+	if (queue.header) 
 		shared_queue_read_close(&queue, &scale_info);
-	}
+
 	return NOERROR;
 }
 
@@ -365,7 +367,7 @@ HRESULT STDMETHODCALLTYPE CVCamStream::GetStreamCaps(int iIndex,
 	pvi->bmiHeader.biHeight = format_list[iIndex].height;
 	pvi->AvgTimePerFrame = format_list[iIndex].time_per_frame;
 	pvi->AvgTimePerFrame = 333333;
-	pvi->bmiHeader.biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');;
+	pvi->bmiHeader.biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');
 	pvi->bmiHeader.biBitCount = 16;
 	pvi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	pvi->bmiHeader.biPlanes = 1;

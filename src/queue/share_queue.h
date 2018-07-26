@@ -17,29 +17,25 @@ typedef unsigned short     uint16_t;
 typedef unsigned int       uint32_t;
 typedef unsigned long long uint64_t;
 
-enum 
-{
+enum {
 	ModeVideo = 0,
 	ModeAudio =1,
 };
 
-enum
-{
+enum {
 	OutputStop =0,
 	OutputStart=1,
 	OutputReady = 2,
 };
 
-struct frame_header
-{
+struct frame_header {
 	uint64_t timestamp;
 	uint32_t linesize[4];
 	int frame_width;
 	int frame_height;
 };
 
-struct queue_header
-{
+struct queue_header {
 	int state;
 	int format;
 	int queue_length;
@@ -55,8 +51,7 @@ struct queue_header
 	int64_t frame_time;
 };
 
-struct share_queue
-{
+struct share_queue {
 	int mode =0 ;
 	int index = -1;
 	int operating_width;
@@ -67,15 +62,15 @@ struct share_queue
 
 inline frame_header* get_frame_header(queue_header* qhead, int index)
 {
-	int offset = qhead->header_size + (qhead->element_size)*index;
+	int offset = qhead->header_size + (qhead->element_size) * index;
 	uint8_t* buff = (uint8_t*)qhead + offset;
 	return (frame_header*)buff;
 }
 
-inline int cal_video_buffer_size(int format,int width, int height)
+inline int cal_video_buffer_size(int format, int width, int height)
 {
 	int frame_size = 0;
-	switch (format){ 
+	switch (format) { 
 		case AV_PIX_FMT_YUV420P:
 		case AV_PIX_FMT_NV12:
 			frame_size = width * height * 3 / 2;

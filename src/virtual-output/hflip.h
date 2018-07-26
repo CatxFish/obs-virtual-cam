@@ -9,7 +9,7 @@ extern "C"
 #include "libavformat/avformat.h"
 };
 
-struct FlipContext{
+struct FlipContext {
 	bool init = false;
 	AVFrame *frame_out = 0;
 	AVFrame *frame_in = 0;

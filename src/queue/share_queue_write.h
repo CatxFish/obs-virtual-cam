@@ -3,7 +3,7 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 	int frame_width, int frame_height, int64_t frame_time, int qlength);
 void shared_queue_write_close(share_queue* q);
 bool shared_queue_push_video(share_queue* q, uint32_t* linesize,
-	uint32_t height, uint8_t** data, uint64_t timestamp,int* crop);
+	uint32_t height, uint8_t** data, uint64_t timestamp, int* crop);
 bool shared_queue_push_audio(share_queue* q, uint32_t size,
 	uint8_t* src, uint64_t timestamp, uint64_t video_ts);
 bool shared_queue_check(int mode);

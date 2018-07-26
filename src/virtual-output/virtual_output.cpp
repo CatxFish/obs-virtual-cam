@@ -12,7 +12,7 @@
 #include "hflip.h"
 #include "math.h"
 
-#define round_even(x){x&(-2)}
+#define round_even(x) {x&(-2)}
 
 struct virtual_out_data {
 	obs_output_t *output = nullptr;
@@ -31,7 +31,7 @@ struct virtual_out_data {
 
 VirtualProperties* virtual_prop;
 obs_output_t *virtual_out;
-bool output_running=false;
+bool output_running = false;
 
 static const char *virtual_output_getname(void *unused)
 {
@@ -43,7 +43,7 @@ static void virtual_output_destroy(void *data)
 {
 	output_running = false;
 	virtual_out_data *out_data = (virtual_out_data*)data;
-	if (out_data){
+	if (out_data) {
 		pthread_mutex_lock(&out_data->mutex);
 		release_flip_filter(&out_data->flip_ctx);
 		pthread_mutex_unlock(&out_data->mutex);
@@ -60,12 +60,12 @@ static void *virtual_output_create(obs_data_t *settings, obs_output_t *output)
 	data->output = output;
 	data->delay = obs_data_get_int(settings, "delay_frame");
 	pthread_mutex_init_value(&data->mutex);
-	if (pthread_mutex_init(&data->mutex, NULL) == 0){
+	if (pthread_mutex_init(&data->mutex, NULL) == 0) {
 		UNUSED_PARAMETER(settings);
 		return data;
-	}
-	else
+	} else
 		virtual_output_destroy(data);
+
 	return NULL;
 }
 
@@ -73,7 +73,6 @@ static bool virtual_output_start(void *data)
 {
 	virtual_out_data* out_data = (virtual_out_data*)data;
 	video_t *video = obs_output_video(out_data->output);
-	const struct video_output_info *voi = video_output_get_info(video);
 	out_data->width = (int32_t)obs_output_get_width(out_data->output);
 	out_data->height = (int32_t)obs_output_get_height(out_data->output);
 	AVPixelFormat fmt = obs_to_ffmpeg_video_format(
@@ -81,11 +80,11 @@ static bool virtual_output_start(void *data)
 	double fps = video_output_get_frame_rate(video);
 	int64_t interval = static_cast<int64_t>(1000000000 / fps);
 
-	bool start = shared_queue_create(&out_data->video_queue, ModeVideo,fmt,
+	bool start = shared_queue_create(&out_data->video_queue, ModeVideo, fmt,
 		out_data->width, out_data->height, interval, out_data->delay + 10);
 
-	start |= shared_queue_create(&out_data->audio_queue,
-		ModeAudio, fmt, AUDIO_SIZE, 1, interval,
+	start |= shared_queue_create(&out_data->audio_queue, ModeAudio, fmt, 
+		AUDIO_SIZE, 1, interval,
 		video_frame_to_audio_frame(fps, out_data->delay + 10, 44100 * 4, AUDIO_SIZE));
 
 	struct audio_convert_info conv = {};
@@ -97,7 +96,7 @@ static bool virtual_output_start(void *data)
 
 	init_flip_filter(&out_data->flip_ctx, out_data->width, out_data->height, fmt);
 
-	if (start){
+	if (start) {
 		shared_queue_set_delay(&out_data->video_queue, out_data->delay);
 		shared_queue_set_delay(&out_data->audio_queue, out_data->delay);
 		start = obs_output_begin_data_capture(out_data->output, 0);
@@ -122,19 +121,17 @@ static void virtual_video(void *param, struct video_data *frame)
 	virtual_out_data *out_data = (virtual_out_data*)param;
 	out_data->last_video_ts = frame->timestamp;
 	pthread_mutex_lock(&out_data->mutex);
-	if (out_data->hori_flip){
+	if (out_data->hori_flip) {
 		flip_frame(&out_data->flip_ctx, frame->data, frame->linesize);
 		shared_queue_push_video(&out_data->video_queue, 
-			(uint32_t*)out_data->flip_ctx.frame_out->linesize,out_data->height, 
+			(uint32_t*)out_data->flip_ctx.frame_out->linesize, out_data->height, 
 			out_data->flip_ctx.frame_out->data, frame->timestamp, out_data->crop);
 		unref_flip_frame(&out_data->flip_ctx);
-	}
-	else{
+	} else {
 		shared_queue_push_video(&out_data->video_queue, frame->linesize,
 			out_data->height, frame->data, frame->timestamp, out_data->crop);
 	}
 	pthread_mutex_unlock(&out_data->mutex);
-
 }
 
 static void virtual_audio(void *param, struct audio_data *frame)
@@ -159,11 +156,10 @@ static void virtual_output_update(void *data, obs_data_t *settings)
 	bool hori_flip = obs_data_get_bool(settings, "hori-flip");
 	bool keep_ratio = obs_data_get_bool(settings, "keep-ratio");
 
-	if (hori_flip){
+	if (hori_flip) {
 		crop[0] = obs_data_get_int(settings, "crop_right");
 		crop[2] = obs_data_get_int(settings, "crop_left");
-	}
-	else{
+	} else {
 		crop[0] = obs_data_get_int(settings, "crop_left");
 		crop[2] = obs_data_get_int(settings, "crop_right");
 	}
@@ -176,12 +172,12 @@ static void virtual_output_update(void *data, obs_data_t *settings)
 	crop[3] = round_even(crop[3] * out_data->height / b_height);
 
 	if (crop[0] != out_data->crop[0] ||
-		crop[1] != out_data->crop[1] ||
-		crop[2] != out_data->crop[2] ||
-		crop[3] != out_data->crop[3] ||
+	    crop[1] != out_data->crop[1] ||
+	    crop[2] != out_data->crop[2] ||
+	    crop[3] != out_data->crop[3] ||
 		hori_flip != out_data->hori_flip ||
-		keep_ratio != out_data->keep_ratio)
-	{
+		keep_ratio != out_data->keep_ratio) {
+
 		pthread_mutex_lock(&out_data->mutex);
 		out_data->hori_flip = hori_flip;
 		out_data->keep_ratio = keep_ratio;
@@ -207,20 +203,20 @@ obs_properties_t* virtual_getproperties(void *data)
 
 struct obs_output_info create_output_info()
 {
-		struct obs_output_info output_info = {};
-		output_info.id = "virtual_output";
-		output_info.flags = OBS_OUTPUT_AUDIO | OBS_OUTPUT_VIDEO;
-		output_info.get_name = virtual_output_getname;
-		output_info.create = virtual_output_create;
-		output_info.destroy = virtual_output_destroy;
-		output_info.start = virtual_output_start;
-		output_info.stop = virtual_output_stop;
-		output_info.raw_video = virtual_video;
-		output_info.raw_audio = virtual_audio;
-		output_info.update = virtual_output_update;
-		output_info.get_properties = virtual_getproperties;
+	struct obs_output_info output_info = {};
+	output_info.id = "virtual_output";
+	output_info.flags = OBS_OUTPUT_AUDIO | OBS_OUTPUT_VIDEO;
+	output_info.get_name = virtual_output_getname;
+	output_info.create = virtual_output_create;
+	output_info.destroy = virtual_output_destroy;
+	output_info.start = virtual_output_start;
+	output_info.stop = virtual_output_stop;
+	output_info.raw_video = virtual_video;
+	output_info.raw_audio = virtual_audio;
+	output_info.update = virtual_output_update;
+	output_info.get_properties = virtual_getproperties;
 
-		return output_info;
+	return output_info;
 }
 
 OBS_DECLARE_MODULE()
@@ -258,7 +254,7 @@ void virtual_output_enable(int delay)
 	if (delay < 0 || delay>30)
 		delay = 3;
 
-	if (!output_running){
+	if (!output_running) {
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_int(settings, "delay_frame", delay);
 		virtual_out = obs_output_create("virtual_output", "VirtualOutput",
@@ -272,7 +268,7 @@ void virtual_output_enable(int delay)
 
 void virtual_output_disable()
 {
-	if (output_running){
+	if (output_running) {
 		output_running = false;
 		obs_output_stop(virtual_out);
 		obs_output_release(virtual_out);	
@@ -281,7 +277,7 @@ void virtual_output_disable()
 
 void virtual_output_set_data(struct vcam_update_data* update_data)
 {
-	if (output_running){
+	if (output_running) {
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_bool(settings, "hori-flip", update_data->horizontal_flip);
 		obs_data_set_bool(settings, "keep-ratio", update_data->keep_ratio);
@@ -303,8 +299,8 @@ bool virtual_output_occupied()
 {
 	if (virtual_output_is_running())
 		return false;
-	else
-		return !(shared_queue_check(ModeVideo) && shared_queue_check(ModeAudio));
+
+	return !(shared_queue_check(ModeVideo) && shared_queue_check(ModeAudio));
 }
 
 int video_frame_to_audio_frame(double video_fps, int video_frame, 

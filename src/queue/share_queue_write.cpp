@@ -12,23 +12,24 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 	int frame_size = 0;
 	int buffer_size = 0;
 
-	if (mode == ModeVideo){
+	if (mode == ModeVideo) {
 		frame_size = cal_video_buffer_size(format, width, height);
-		buffer_size = sizeof(queue_header) + (sizeof(frame_header) + frame_size)
-			* qlength;
-		q->hwnd = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
-			0, buffer_size, MAPPING_NAMEV);
-	}else{
+		buffer_size = sizeof(queue_header) + (sizeof(frame_header) 
+			+ frame_size) * qlength;
+		q->hwnd = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, 
+			PAGE_READWRITE, 0, buffer_size, MAPPING_NAMEV);
+	} else {
 		frame_size = AUDIO_SIZE;
-		buffer_size = sizeof(queue_header) + (sizeof(frame_header) + frame_size)
-			* qlength;
-		q->hwnd = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
-			0, buffer_size, MAPPING_NAMEA);
+		buffer_size = sizeof(queue_header) + (sizeof(frame_header) + 
+			frame_size) * qlength;
+		q->hwnd = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, 
+			PAGE_READWRITE, 0, buffer_size, MAPPING_NAMEA);
 	}
 
-	if (q->hwnd)
-		q->header = (queue_header*)MapViewOfFile(q->hwnd, FILE_MAP_ALL_ACCESS, 0, 0, buffer_size);
-
+	if (q->hwnd) {
+		q->header = (queue_header*)MapViewOfFile(q->hwnd, FILE_MAP_ALL_ACCESS, 
+			0, 0, buffer_size);
+	}
 	queue_header* q_head = q->header;
 
 	if (q_head){
@@ -64,10 +65,10 @@ void shared_queue_write_close(share_queue* q)
 	}
 }
 
-void copy_video(uint8_t* dst, uint8_t* src, uint32_t linesize, 
-	uint32_t height,uint32_t width)
+void copy_video(uint8_t* dst, uint8_t* src, uint32_t linesize, uint32_t height,
+	uint32_t width)
 {
-	for (int i = 0; i < height; i++){
+	for (int i = 0; i < height; i++) {
 		memcpy(dst, src, width);
 		dst += width;
 		src += linesize;
@@ -160,7 +161,7 @@ bool shared_queue_push_video(share_queue* q, uint32_t* linesize,
 
 	q->index++;
 
-	if (q->index >= q->header->queue_length){
+	if (q->index >= q->header->queue_length) {
 		q->header->state = OutputReady;
 		q->index = 0;
 	}
@@ -175,7 +176,7 @@ bool shared_queue_push_audio(share_queue* q, uint32_t size,
 		return false;
 
 	int offset = q->header->header_size +
-		(q->header->element_size)*q->index;
+		(q->header->element_size) * q->index;
 
 	uint8_t* buff = (uint8_t*)q->header + offset;
 	frame_header* head = (frame_header*)buff;
@@ -188,7 +189,7 @@ bool shared_queue_push_audio(share_queue* q, uint32_t size,
 	q->header->write_index = q->index;
 	q->index++;
 
-	if (q->index >= q->header->queue_length){
+	if (q->index >= q->header->queue_length) {
 		q->index = 0;
 		q->header->state = OutputReady;
 	}
@@ -207,11 +208,10 @@ bool shared_queue_check(int mode)
 	else
 		return false;
 
-	if (hwnd){
+	if (hwnd) {
 		CloseHandle(hwnd);
 		return false;
-	}
-	else
+	} else
 		return true;
 }
 

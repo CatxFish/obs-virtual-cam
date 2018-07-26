@@ -24,7 +24,6 @@ public:
 	void SetVisable();
 	void showEvent(QShowEvent *event);
 	void closeEvent(QCloseEvent *event);
-	bool output_enable=false;
 
 private Q_SLOTS:
 	void onStart();

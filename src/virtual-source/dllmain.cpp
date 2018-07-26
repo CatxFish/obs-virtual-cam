@@ -141,20 +141,20 @@ STDAPI RegisterFilters(BOOL bRegister)
 		achFileName, NUMELMS(achFileName));
 
 	hr = CoInitialize(0);
-	if (bRegister){
+	if (bRegister) {
 		hr = AMovieSetupRegisterServer(CLSID_OBS_VirtualV, L"OBS-Camera", 
 			achFileName, L"Both", L"InprocServer32");
 		hr |= AMovieSetupRegisterServer(CLSID_OBS_VirtualA, L"OBS-Audio",
 			achFileName, L"Both", L"InprocServer32");
 	}
 
-	if (SUCCEEDED(hr)){
+	if (SUCCEEDED(hr)) {
 
 		IFilterMapper2 *fm = 0;
 		hr = CreateComObject(CLSID_FilterMapper2, IID_IFilterMapper2, fm);
 
-		if (SUCCEEDED(hr)){
-			if (bRegister){
+		if (SUCCEEDED(hr)) {
+			if (bRegister) {
 				IMoniker *moniker_video = 0, *moniker_audio = 0;
 				REGFILTER2 rf2;
 				rf2.dwVersion = 1;
@@ -167,7 +167,7 @@ STDAPI RegisterFilters(BOOL bRegister)
 				hr = fm->RegisterFilter(CLSID_OBS_VirtualA, L"OBS-Audio", 
 					&moniker_audio, &CLSID_AudioInputDeviceCategory, NULL, &rf2);
 
-			}else{
+			} else {
 				hr = fm->UnregisterFilter(&CLSID_AudioInputDeviceCategory, 0, CLSID_OBS_VirtualA);
 				hr = fm->UnregisterFilter(&CLSID_VideoInputDeviceCategory, 0, CLSID_OBS_VirtualV);
 			}

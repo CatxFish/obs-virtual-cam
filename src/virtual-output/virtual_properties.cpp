@@ -74,14 +74,14 @@ VirtualProperties::VirtualProperties(QWidget *parent) :
 
 	update_data.keep_ratio = keep_ratio;
 	update_data.horizontal_flip = hori_flip;
-	if (crop_enable){
+	if (crop_enable) {
 		update_data.crop[0] = crop_left;
 		update_data.crop[1] = crop_top;
 		update_data.crop[2] = crop_right;
 		update_data.crop[3] = crop_bottom;
 	}
 
-	if (autostart){
+	if (autostart) {
 		obs_get_video_info(&video_info);
 		onStart();
 	}
@@ -225,18 +225,16 @@ bool VirtualProperties::GetItemRegion(obs_sceneitem_t* item,
 	offset_bottom = fmin(max_height, fmax(0, info.pos.y + offset_bottom));
 
 	if ((offset_top ==0 && offset_bottom ==0)||
-		(offset_top == max_height && offset_bottom == max_height)||
-		(offset_left == 0 && offset_right == 0) ||
-		(offset_left == max_width && offset_right == max_width))
-	{ 
+	    (offset_top == max_height && offset_bottom == max_height)||
+	    (offset_left == 0 && offset_right == 0) ||
+	    (offset_left == max_width && offset_right == max_width)){ 
+
 		left = 0;
 		right = 0;
 		top = 0;
 		bottom = 0;
 		return false;	
-	}
-	else
-	{
+	} else{
 		left = offset_left;
 		top = offset_top;
 		right = max_width - offset_right;
@@ -252,13 +250,13 @@ void VirtualProperties::onGetSourceRegion()
 		scene_name.toUtf8().constData());
 	obs_scene_t* scene = obs_scene_from_source(source);
 	QListWidgetItem * list_item = ui->listWidget_source->currentItem();
-	if (scene && list_item){
+	if (scene && list_item) {
 		QString name = list_item->text();
-		obs_sceneitem_t* item = obs_scene_find_source(
-			scene, name.toUtf8().constData());
-		if (item){
+		obs_sceneitem_t* item = obs_scene_find_source(scene, 
+			name.toUtf8().constData());
+		if (item) {
 			int left, top, right, bottom;
-			if (GetItemRegion(item, left, top, right, bottom)){
+			if (GetItemRegion(item, left, top, right, bottom)) {
 				ui->spinBox_left->setValue(left);
 				ui->spinBox_top->setValue(top);
 				ui->spinBox_right->setValue(right);
@@ -274,20 +272,19 @@ void VirtualProperties::showEvent(QShowEvent *event)
 	obs_get_video_info(&video_info);
 	obs_source_t* source = obs_frontend_get_current_scene();
 	obs_scene_t* scene = obs_scene_from_source(source);
-	if (scene){
+	if (scene) {
 		scene_name = QString::fromUtf8(obs_source_get_name(source));
 		ui->listWidget_source->clear();
 		obs_scene_enum_items(scene, ListSource, (void*)ui->listWidget_source);
 	}
 	obs_source_release(source);
 
-	if (virtual_output_occupied()){
+	if (virtual_output_occupied()) {
 		ui->spinBox->setEnabled(false);
 		ui->horizontalSlider->setEnabled(false);
 		ui->pushButtonStart->setEnabled(false);
 		ui->pushButtonStop->setEnabled(false);
-	}
-	else{
+	} else {
 		ui->spinBox->setEnabled(!virtual_output_is_running());
 		ui->horizontalSlider->setEnabled(!virtual_output_is_running());
 		ui->pushButtonStart->setEnabled(!virtual_output_is_running());
@@ -334,7 +331,7 @@ bool VirtualProperties::ListSource(obs_scene_t* scene,
 void VirtualProperties::SaveSetting()
 {
 	config_t* config = obs_frontend_get_global_config();
-	if (config){
+	if (config) {
 		bool autostart = ui->checkBox_auto->isChecked();
 		bool hori_flip = ui->checkBox_horiflip->isChecked();
 		bool keep_ratio = ui->checkBox_keepratio->isChecked();
