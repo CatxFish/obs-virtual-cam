@@ -32,7 +32,7 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 	}
 	queue_header* q_head = q->header;
 
-	if (q_head){
+	if (q_head) {
 		q_head->header_size = sizeof(queue_header);
 		q_head->element_header_size = sizeof(frame_header);
 		q_head->element_size = sizeof(frame_header) + frame_size;
@@ -55,7 +55,7 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 
 void shared_queue_write_close(share_queue* q)
 {
-	if (q && q->header){
+	if (q && q->header) {
 		q->header->state = OutputStop;
 		UnmapViewOfFile(q->header);
 		CloseHandle(q->hwnd);

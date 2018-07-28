@@ -234,7 +234,7 @@ bool VirtualProperties::GetItemRegion(obs_sceneitem_t* item,
 		top = 0;
 		bottom = 0;
 		return false;	
-	} else{
+	} else {
 		left = offset_left;
 		top = offset_top;
 		right = max_width - offset_right;

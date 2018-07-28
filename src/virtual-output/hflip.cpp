@@ -5,6 +5,9 @@ bool init_flip_filter(FlipContext* ctx,int width, int height, int format)
 	char args[512];
 	int ret = -1;
 
+	if (ctx->init)
+		return false;
+
 	avfilter_register_all();
 
 	AVFilter *buffersrc = avfilter_get_by_name("buffer");
@@ -53,19 +56,27 @@ bool init_flip_filter(FlipContext* ctx,int width, int height, int format)
 	ctx->frame_in->width = width;
 	ctx->frame_in->height = height;
 	ctx->frame_in->format = format;
+	ctx->init = true;
 	return true;
 }
 
 bool release_flip_filter(FlipContext* ctx)
 {
+	if (!ctx->init)
+		return false;
+
 	av_frame_free(&ctx->frame_out);
 	av_frame_free(&ctx->frame_in);
 	avfilter_graph_free(&ctx->filter_graph);
+	ctx->init = false;
 	return true;
 }
 
 void flip_frame(FlipContext* ctx, uint8_t** src, uint32_t* linesize)
 {
+	if (!ctx->init)
+		return;
+
 	for (int i = 0; i < 8; i++){
 		ctx->frame_in->data[i] = src[i];
 		ctx->frame_in->linesize[i] = linesize[i];
@@ -77,6 +88,9 @@ void flip_frame(FlipContext* ctx, uint8_t** src, uint32_t* linesize)
 
 void unref_flip_frame(FlipContext* ctx)
 {
+	if (!ctx->init)
+		return;
+
 	for (int i = 0; i < 8; i++){
 		ctx->frame_in->data[i] = NULL;
 		ctx->frame_in->linesize[i] = 0;

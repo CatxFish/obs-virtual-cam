@@ -1,10 +1,7 @@
 #include <obs-module.h>
-#include <obs-frontend-api.h>
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/config-file.h>
-#include <QMainWindow>
-#include <QAction>
 #include "../queue/share_queue_write.h"
 #include "virtual_output.h"
 #include "virtual_properties.h"
@@ -29,7 +26,6 @@ struct virtual_out_data {
 	FlipContext flip_ctx;
 };
 
-VirtualProperties* virtual_prop;
 obs_output_t *virtual_out;
 bool output_running = false;
 
@@ -219,36 +215,6 @@ struct obs_output_info create_output_info()
 	return output_info;
 }
 
-OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("obs-virtual_output", "en-US")
-
-bool obs_module_load(void)
-{
-	obs_output_info virtual_output_info = create_output_info();
-	obs_register_output(&virtual_output_info);
-
-	QMainWindow* main_window = (QMainWindow*)obs_frontend_get_main_window();
-	QAction *action = (QAction*)obs_frontend_add_tools_menu_qaction(
-		obs_module_text("VirtualCam"));
-
-	obs_frontend_push_ui_translation(obs_module_get_string);
-	virtual_prop = new VirtualProperties(main_window);
-	obs_frontend_pop_ui_translation();
-
-	auto menu_cb = []
-	{
-		virtual_prop->setVisible(!virtual_prop->isVisible());
-	};
-
-	action->connect(action, &QAction::triggered, menu_cb);
-
-	return true;
-}
-
-void obs_module_unload(void)
-{
-}
-
 void virtual_output_enable(int delay)
 {
 	if (delay < 0 || delay>30)
@@ -259,7 +225,6 @@ void virtual_output_enable(int delay)
 		obs_data_set_int(settings, "delay_frame", delay);
 		virtual_out = obs_output_create("virtual_output", "VirtualOutput",
 			settings, NULL);
-		obs_output_addref(virtual_out);
 		obs_output_start(virtual_out);
 		output_running = true;
 		obs_data_release(settings);
