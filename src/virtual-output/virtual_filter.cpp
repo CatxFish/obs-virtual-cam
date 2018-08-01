@@ -6,10 +6,13 @@
 #define S_DELAY             "delay"
 #define S_START             "start"
 #define S_STOP              "stop"
+#define S_TARGET            "target"
 
-#define T_DELAY             obs_module_text("DelayFrame")
-#define T_START             obs_module_text("StartOutput")
-#define T_STOP              obs_module_text("StopOutput")
+#define T_(v)               obs_module_text(v)
+#define T_DELAY             T_("DelayFrame")
+#define T_START             T_("StartOutput")
+#define T_STOP              T_("StopOutput")
+#define T_TARGET            T_("Target")
 
 struct virtual_filter_data {
 	obs_source_t* context;
@@ -21,6 +24,7 @@ struct virtual_filter_data {
 	uint32_t height;
 	uint32_t base_width;
 	uint32_t base_height;
+	int mode = 0;
 	int delay = 0;
 };
 
@@ -38,7 +42,7 @@ static void *virtual_filter_create(obs_data_t *settings, obs_source_t *context)
 	data->active = false;
 	data->context = context;
 	data->texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-
+	obs_source_update(context, settings);
 	UNUSED_PARAMETER(settings);
 	return data;
 }
@@ -109,6 +113,7 @@ static void virtual_filter_update(void* data, obs_data_t* settings)
 {
 	virtual_filter_data *filter = (virtual_filter_data *)data;
 	filter->delay = (int)obs_data_get_int(settings, S_DELAY);
+	filter->mode = (int)obs_data_get_int(settings, S_TARGET) + ModeFilter1;
 }
 
 static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
@@ -118,7 +123,7 @@ static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
 	obs_source_t* target = obs_filter_get_target(filter->context);
 	struct obs_video_info ovi = { 0 };
 	uint32_t base_width, base_height;
-	int64_t interval;
+	uint64_t interval;
 	
 	obs_get_video_info(&ovi);
 	base_width = obs_source_get_base_width(target);
@@ -128,12 +133,11 @@ static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
 	filter->width = 0;
 	filter->height = 0;
 	interval = (uint64_t)ovi.fps_den * 1000000000ULL / (uint64_t)ovi.fps_num;
-	filter->active = shared_queue_create(&filter->video_queue, ModeVideo, 
+	filter->active = shared_queue_create(&filter->video_queue, filter->mode, 
 		AV_PIX_FMT_BGRA, filter->base_width, filter->base_height, interval, 
 		filter->delay + 10);
 
 	if (filter->active) {
-
 		obs_property_t *stop = obs_properties_get(props, S_STOP);
 		obs_property_set_visible(p, false);
 		obs_property_set_visible(stop, true);
@@ -160,8 +164,16 @@ static obs_properties_t *virtual_filter_properties(void *data)
 {
 	virtual_filter_data *filter = (virtual_filter_data*)data;
 	obs_properties_t *props = obs_properties_create();
-	obs_property *start, *stop;
+	obs_property *start, *stop, *cb;
 	obs_properties_add_int_slider(props, S_DELAY, T_DELAY, 0, 30, 1);
+	cb = obs_properties_add_list(props, S_TARGET, T_TARGET, 
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+	obs_property_list_add_int(cb, "FilterCam1", 0);
+	obs_property_list_add_int(cb, "FilterCam2", 1);
+	obs_property_list_add_int(cb, "FilterCam3", 2);
+	obs_property_list_add_int(cb, "FilterCam4", 3);
+
 	start = obs_properties_add_button(props, S_START, T_START, 
 		virtual_filter_start);
 	stop = obs_properties_add_button(props, S_STOP, T_STOP, 
@@ -175,7 +187,7 @@ static obs_properties_t *virtual_filter_properties(void *data)
 
 static void virtual_filter_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, S_DELAY, 3);
+	obs_data_set_default_int(settings, S_DELAY, 1);
 }
 
 struct obs_source_info create_filter_info()

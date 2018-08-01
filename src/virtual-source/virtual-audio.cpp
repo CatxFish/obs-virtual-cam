@@ -38,8 +38,8 @@ CVAudioStream::CVAudioStream(HRESULT *phr, CVAudio *pParent, LPCWSTR pPinName) :
 CSourceStream(NAME("Audio"), phr, pParent, pPinName), parent(pParent)
 {
 
-	m_allocProp.cBuffers = m_allocProp.cbBuffer = -1;
-	m_allocProp.cbAlign = m_allocProp.cbPrefix = -1;
+	alloc_prop.cBuffers = alloc_prop.cbBuffer = -1;
+	alloc_prop.cbAlign = alloc_prop.cbPrefix = -1;
 	GetMediaType(&m_mt);
 }
 
@@ -72,12 +72,13 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 {
 	HRESULT hr;
 	bool get_sample = false;
-	int get_times = 0;
-	REFERENCE_TIME start_time = 0;
-	REFERENCE_TIME end_time = 0;
 	uint8_t* dst;
 	uint32_t size = 0;
-	uint64_t timestamp = 0;
+	uint32_t get_times = 0;
+	uint64_t timestamp = 0;	
+	REFERENCE_TIME start_time = 0;
+	REFERENCE_TIME end_time = 0;
+
 
 	hr = pms->GetPointer((BYTE**)&dst);
 
@@ -201,17 +202,17 @@ HRESULT CVAudioStream::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERT
 		pProperties->cBuffers = 1;
 		pProperties->cbBuffer = AUDIO_BUFFER_SIZE;
 
-		if (0 < m_allocProp.cBuffers)
-			pProperties->cBuffers = m_allocProp.cBuffers;
+		if (0 < alloc_prop.cBuffers)
+			pProperties->cBuffers = alloc_prop.cBuffers;
 
-		if (0 < m_allocProp.cbBuffer)
-			pProperties->cbBuffer = m_allocProp.cbBuffer;
+		if (0 < alloc_prop.cbBuffer)
+			pProperties->cbBuffer = alloc_prop.cbBuffer;
 
-		if (0 < m_allocProp.cbAlign)
-			pProperties->cbAlign = m_allocProp.cbAlign;
+		if (0 < alloc_prop.cbAlign)
+			pProperties->cbAlign = alloc_prop.cbAlign;
 
-		if (0 < m_allocProp.cbPrefix)
-			pProperties->cbPrefix = m_allocProp.cbPrefix;
+		if (0 < alloc_prop.cbPrefix)
+			pProperties->cbPrefix = alloc_prop.cbPrefix;
 
 		ALLOCATOR_PROPERTIES Actual;
 		hr = pAlloc->SetProperties(pProperties, &Actual);
@@ -306,7 +307,7 @@ STDMETHODIMP CVAudioStream::SuggestAllocatorProperties(const ALLOCATOR_PROPERTIE
 		if (IsConnected())
 			hr = VFW_E_ALREADY_CONNECTED;
 		else
-			m_allocProp = *pprop;
+			alloc_prop = *pprop;
 	} else
 		hr = E_POINTER;
 	
@@ -318,7 +319,7 @@ STDMETHODIMP CVAudioStream::GetAllocatorProperties(ALLOCATOR_PROPERTIES* pprop)
 	HRESULT hr = S_OK;
 	if (pprop){
 		if (IsConnected())
-			*pprop = m_allocProp;
+			*pprop = alloc_prop;
 		else
 			hr = VFW_E_NOT_CONNECTED;
 	} else

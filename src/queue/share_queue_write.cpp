@@ -1,7 +1,7 @@
 #include "share_queue_write.h"
 
 bool shared_queue_create(share_queue* q, int mode, int format,
-	int width, int height, int64_t frame_time, int qlength)
+	int width, int height, uint64_t frame_time, int qlength)
 {
 	if (!q)
 		return false;
@@ -11,19 +11,20 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 
 	int frame_size = 0;
 	int buffer_size = 0;
+	const char* name = get_mapping_name(mode);
 
-	if (mode == ModeVideo) {
+	if (mode < ModeAudio) {
 		frame_size = cal_video_buffer_size(format, width, height);
 		buffer_size = sizeof(queue_header) + (sizeof(frame_header) 
 			+ frame_size) * qlength;
 		q->hwnd = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, 
-			PAGE_READWRITE, 0, buffer_size, MAPPING_NAMEV);
+			PAGE_READWRITE, 0, buffer_size, name);
 	} else {
 		frame_size = AUDIO_SIZE;
 		buffer_size = sizeof(queue_header) + (sizeof(frame_header) + 
 			frame_size) * qlength;
 		q->hwnd = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, 
-			PAGE_READWRITE, 0, buffer_size, MAPPING_NAMEA);
+			PAGE_READWRITE, 0, buffer_size, name);
 	}
 
 	if (q->hwnd) {
@@ -200,13 +201,9 @@ bool shared_queue_push_audio(share_queue* q, uint32_t size,
 bool shared_queue_check(int mode)
 {
 	HANDLE hwnd = NULL;
-
-	if (mode == ModeVideo)
-		hwnd = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, MAPPING_NAMEV);
-	else if (mode == ModeAudio)
-		hwnd = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, MAPPING_NAMEA);
-	else
-		return false;
+	const char *name = get_mapping_name(mode);
+	
+	hwnd = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, name);
 
 	if (hwnd) {
 		CloseHandle(hwnd);

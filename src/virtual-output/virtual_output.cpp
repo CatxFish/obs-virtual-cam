@@ -74,7 +74,7 @@ static bool virtual_output_start(void *data)
 	AVPixelFormat fmt = obs_to_ffmpeg_video_format(
 		video_output_get_format(video));
 	double fps = video_output_get_frame_rate(video);
-	int64_t interval = static_cast<int64_t>(1000000000 / fps);
+	uint64_t interval = static_cast<int64_t>(1000000000 / fps);
 
 	bool start = shared_queue_create(&out_data->video_queue, ModeVideo, fmt,
 		out_data->width, out_data->height, interval, out_data->delay + 10);
@@ -90,7 +90,8 @@ static bool virtual_output_start(void *data)
 
 	obs_output_set_audio_conversion(out_data->output, &conv);
 
-	init_flip_filter(&out_data->flip_ctx, out_data->width, out_data->height, fmt);
+	init_flip_filter(&out_data->flip_ctx, out_data->width, out_data->height, 
+		fmt);
 
 	if (start) {
 		shared_queue_set_delay(&out_data->video_queue, out_data->delay);

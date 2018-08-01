@@ -16,7 +16,7 @@ class CVCamStream;
 
 struct format
 {
-	format(int width_, int height_, int64_t time_per_frame_){
+	format(int width_, int height_, int64_t time_per_frame_) {
 		width = width_;
 		height = height_;
 		time_per_frame = time_per_frame_;
@@ -38,11 +38,13 @@ public:
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
 	IFilterGraph *GetGraph() { return m_pGraph; }
 	FILTER_STATE GetState(){ return m_State; }
-	CVCam(LPUNKNOWN lpunk, HRESULT *phr);
+	CVCam(LPUNKNOWN lpunk, HRESULT *phr, const GUID id);
+protected:
+	CVCamStream *stream = nullptr;
 
 };
 
-class CVCamStream : public CSourceStream, public IAMStreamConfig,public IKsPropertySet
+class CVCamStream : public CSourceStream, public IAMStreamConfig, public IKsPropertySet
 {
 public:
 
@@ -93,6 +95,7 @@ public:
 	HRESULT SetMediaType(const CMediaType *pmt);
 	HRESULT OnThreadCreate(void);
 	HRESULT OnThreadDestroy(void);
+	void SetShareQueueMode(int mode);
 
 private:
 
@@ -106,21 +109,23 @@ private:
 
 	//for Fillbuffer() use
 	share_queue queue = {};
-	REFERENCE_TIME  prev_end_ts =0;
+	bool reset_mode = false;
+	int mode = 0;
+	int format = 0;
+	uint8_t* dst;
+	uint32_t frame_width = 0;
+	uint32_t frame_height = 0;
 	uint64_t obs_start_ts = 0;
 	uint64_t dshow_start_ts = 0;
-	uint8_t* dst;
-	int format = 0;
-	int frame_width = 0;
-	int frame_height = 0;
-	int64_t time_perframe = 0;
+	uint64_t time_perframe = 0;
+	REFERENCE_TIME  prev_end_ts = 0;
 
 	//obs format related
 	bool use_obs_format_init = false;
 	int obs_format = 0;
-	int obs_width = 1920;
-	int obs_height = 1080;
-	int64_t obs_frame_time = 333333;
+	uint32_t obs_width = 1920;
+	uint32_t obs_height = 1080;
+	uint64_t obs_frame_time = 333333;
 	dst_scale_context scale_info;
 
 };

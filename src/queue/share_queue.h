@@ -5,8 +5,12 @@
 #include "libavutil/samplefmt.h"
 
 #define AUDIO_SIZE 4096
-#define MAPPING_NAMEV "OBSVirtualVideo"
-#define MAPPING_NAMEA "OBSVirtualAudio"
+#define MAPPING_NAMEV  "OBSVirtualVideo"
+#define MAPPING_NAMEF1 "OBSVirtualFilter1"
+#define MAPPING_NAMEF2 "OBSVirtualFilter2"
+#define MAPPING_NAMEF3 "OBSVirtualFilter3"
+#define MAPPING_NAMEF4 "OBSVirtualFilter4"
+#define MAPPING_NAMEA  "OBSVirtualAudio"
 
 typedef signed char        int8_t;
 typedef short              int16_t;
@@ -19,12 +23,16 @@ typedef unsigned long long uint64_t;
 
 enum {
 	ModeVideo = 0,
-	ModeAudio =1,
+	ModeFilter1 = 1,
+	ModeFilter2 = 2,
+	ModeFilter3 = 3,
+	ModeFilter4 = 4,
+	ModeAudio = 5,
 };
 
 enum {
-	OutputStop =0,
-	OutputStart=1,
+	OutputStop = 0,
+	OutputStart = 1,
 	OutputReady = 2,
 };
 
@@ -48,7 +56,7 @@ struct queue_header {
 	int canvas_height;
 	int aspect_ratio_type;
 	uint64_t last_ts;
-	int64_t frame_time;
+	uint64_t frame_time;
 };
 
 struct share_queue {
@@ -59,6 +67,19 @@ struct share_queue {
 	HANDLE hwnd =NULL;
 	queue_header* header = nullptr;
 };
+
+inline char* get_mapping_name(int mode)
+{
+	switch (mode){
+		case ModeVideo:     return MAPPING_NAMEV;
+		case ModeFilter1:   return MAPPING_NAMEF1;
+		case ModeFilter2:   return MAPPING_NAMEF2;
+		case ModeFilter3:   return MAPPING_NAMEF3;
+		case ModeFilter4:   return MAPPING_NAMEF4;
+		case ModeAudio:     return MAPPING_NAMEA;
+		default:            return NULL;
+	}
+}
 
 inline frame_header* get_frame_header(queue_header* qhead, int index)
 {

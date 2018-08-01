@@ -5,12 +5,9 @@ bool shared_queue_open(share_queue* q, int mode)
 	if (!q)
 		return false;
 
-	if (mode == ModeVideo)
-		q->hwnd = OpenFileMappingA(FILE_MAP_READ, FALSE, MAPPING_NAMEV);
-	else if (mode == ModeAudio)
-		q->hwnd = OpenFileMappingA(FILE_MAP_READ, FALSE, MAPPING_NAMEA);
-	else
-		return false;
+	const char* name = get_mapping_name(mode);
+
+	q->hwnd = OpenFileMappingA(FILE_MAP_READ, FALSE, name);
 
 	if (q->hwnd) {
 		q->header = (queue_header*)MapViewOfFile(q->hwnd, FILE_MAP_READ, 0, 0, 
@@ -50,7 +47,7 @@ bool share_queue_init_index(share_queue* q)
 		return false;
 
 
-	if (q->mode == ModeVideo) {
+	if (q->mode < ModeAudio) {
 		q->index = q->header->write_index - q->header->delay_frame;
 		if (q->index < 0)
 			q->index += q->header->queue_length;
@@ -86,14 +83,19 @@ bool share_queue_init_index(share_queue* q)
 	return true;
 }
 
-bool shared_queue_get_video_format(int* format, int* width,
-	int* height, int64_t* avgtime)
+bool shared_queue_get_video_format(int mode, int* format, uint32_t* width,
+	uint32_t* height, uint64_t* avgtime)
 {
 	bool success = true;
 	HANDLE hwnd;
 	queue_header* header;
 
-	hwnd = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, MAPPING_NAMEV);
+	if (mode < ModeVideo || mode >= ModeAudio)
+		return false;
+
+	const char* name = get_mapping_name(mode);
+
+	hwnd = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, name);
 	if (hwnd)
 		header = (queue_header*)MapViewOfFile(hwnd, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 	else

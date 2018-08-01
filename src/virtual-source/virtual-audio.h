@@ -102,10 +102,10 @@ public:
 
 private:
 	CVAudio *parent;
-	REFERENCE_TIME  prev_end_ts = 0;
-	ALLOCATOR_PROPERTIES m_allocProp;
 	share_queue queue;
 	uint64_t obs_start_ts = 0;
 	uint64_t dshow_start_ts = 0;
+	REFERENCE_TIME  prev_end_ts = 0;
+	ALLOCATOR_PROPERTIES alloc_prop;
 
 };

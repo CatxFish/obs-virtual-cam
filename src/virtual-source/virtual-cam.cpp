@@ -16,17 +16,18 @@
 CUnknown * WINAPI CVCam::CreateInstance(LPUNKNOWN lpunk, HRESULT *phr)
 {
 	ASSERT(phr);
-	CUnknown *punk = new CVCam(lpunk, phr);
+	CUnknown *punk = new CVCam(lpunk, phr, CLSID_OBS_VirtualV);
 	return punk;
 }
 
-CVCam::CVCam(LPUNKNOWN lpunk, HRESULT *phr) :
-CSource(NAME("OBS Virtual CAM"), lpunk, CLSID_OBS_VirtualV)
+CVCam::CVCam(LPUNKNOWN lpunk, HRESULT *phr, const GUID id) :
+CSource(NAME("OBS Virtual CAM"), lpunk, id)
 {
 	ASSERT(phr);
 	CAutoLock cAutoLock(&m_cStateLock);
 	m_paStreams = (CSourceStream **) new CVCamStream*[1];
-	m_paStreams[0] = new CVCamStream(phr, this, L"Video");
+	stream = new CVCamStream(phr, this, L"Video");
+	m_paStreams[0] = stream;
 }
 
 HRESULT CVCam::NonDelegatingQueryInterface(REFIID riid, void **ppv)
@@ -44,15 +45,22 @@ CSourceStream(NAME("Video"), phr, pParent, pPinName), parent(pParent)
 	use_obs_format_init = CheckObsSetting();
 	GetMediaType(0,&m_mt);
 	prev_end_ts = 0;
+	mode = ModeVideo;
 }
 
 CVCamStream::~CVCamStream()
 {
 }
 
+void CVCamStream::SetShareQueueMode(int queue_mode)
+{
+	mode = queue_mode;
+	reset_mode = true;
+}
+
 bool CVCamStream::CheckObsSetting()
 {
-	bool get= shared_queue_get_video_format(&obs_format, &obs_width,
+	bool get = shared_queue_get_video_format(mode,&obs_format, &obs_width,
 		&obs_height, &obs_frame_time);
 
 
@@ -115,10 +123,11 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 	hr = pms->GetPointer((BYTE**)&dst);
 
 	if (!queue.hwnd) {
-		if (shared_queue_open(&queue, ModeVideo)) {
-			shared_queue_get_video_format(&format, &frame_width, 
+		if (shared_queue_open(&queue, mode)) {
+			shared_queue_get_video_format(mode, &format, &frame_width,
 				&frame_height, &time_perframe);
 			SetConvertContext();
+			reset_mode = false;
 		}
 	}
 
@@ -151,7 +160,8 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 		duration = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
 	}
 
-	if (queue.header && queue.header->state == OutputStop || get_times > 20) {
+	if (queue.header && queue.header->state == OutputStop || reset_mode || 
+		get_times > 20) {
 		shared_queue_read_close(&queue, &scale_info);
 		dshow_start_ts = 0;
 		obs_start_ts = 0;
