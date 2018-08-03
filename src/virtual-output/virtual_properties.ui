@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>428</width>
-    <height>433</height>
+    <height>385</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QPushButton" name="pushButtonStart">
    <property name="geometry">
     <rect>
-     <x>260</x>
-     <y>400</y>
+     <x>240</x>
+     <y>340</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -29,8 +29,8 @@
   <widget class="QPushButton" name="pushButtonStop">
    <property name="geometry">
     <rect>
-     <x>340</x>
-     <y>400</y>
+     <x>330</x>
+     <y>340</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -39,233 +39,12 @@
     <string>StopOutput</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="checkBox_auto">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>20</y>
-     <width>319</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>AutoStart</string>
-   </property>
-  </widget>
-  <widget class="QGroupBox" name="groupBox_crop">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>60</y>
-     <width>391</width>
-     <height>231</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string>Crop</string>
-   </property>
-   <widget class="QRadioButton" name="radioButton_enable_crop">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>30</y>
-      <width>91</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>EnableCrop</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radioButton_disable_crop">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>30</y>
-      <width>83</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>DisableCrop</string>
-    </property>
-   </widget>
-   <widget class="QWidget" name="layoutWidget_2">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>351</width>
-      <height>131</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="4,4,4">
-     <property name="sizeConstraint">
-      <enum>QLayout::SetDefaultConstraint</enum>
-     </property>
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QListWidget" name="listWidget_source">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButton_get_region">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>10</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>&gt;&gt;</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <property name="sizeConstraint">
-        <enum>QLayout::SetDefaultConstraint</enum>
-       </property>
-       <item>
-        <widget class="QLabel" name="label_left">
-         <property name="text">
-          <string>CropLeft</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_right">
-         <property name="text">
-          <string>CropRight</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>CropTop</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_bottom">
-         <property name="text">
-          <string>CropBottom</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <property name="sizeConstraint">
-        <enum>QLayout::SetDefaultConstraint</enum>
-       </property>
-       <item>
-        <widget class="QSpinBox" name="spinBox_left">
-         <property name="minimum">
-          <number>0</number>
-         </property>
-         <property name="maximum">
-          <number>1920</number>
-         </property>
-         <property name="value">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="spinBox_right">
-         <property name="minimum">
-          <number>0</number>
-         </property>
-         <property name="maximum">
-          <number>1920</number>
-         </property>
-         <property name="value">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="spinBox_top">
-         <property name="minimum">
-          <number>0</number>
-         </property>
-         <property name="maximum">
-          <number>1080</number>
-         </property>
-         <property name="value">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="spinBox_bottom">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimum">
-          <number>0</number>
-         </property>
-         <property name="maximum">
-          <number>1080</number>
-         </property>
-         <property name="value">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-    </layout>
-   </widget>
-  </widget>
   <widget class="QGroupBox" name="groupBox_delay">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>300</y>
-     <width>391</width>
+     <y>250</y>
+     <width>381</width>
      <height>71</height>
     </rect>
    </property>
@@ -314,31 +93,80 @@
     </property>
    </widget>
   </widget>
-  <widget class="QCheckBox" name="checkBox_horiflip">
+  <widget class="QGroupBox" name="groupBox_option">
    <property name="geometry">
     <rect>
-     <x>120</x>
-     <y>20</y>
-     <width>121</width>
-     <height>20</height>
+     <x>20</x>
+     <y>30</y>
+     <width>381</width>
+     <height>141</height>
     </rect>
    </property>
-   <property name="text">
-    <string>HorizontalFlip</string>
+   <property name="title">
+    <string>Option</string>
    </property>
+   <widget class="QCheckBox" name="checkBox_auto">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>341</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>AutoStart</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBox_horiflip">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>341</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>HorizontalFlip</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBox_keepratio">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>90</y>
+      <width>341</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>KeepAspectRatio</string>
+    </property>
+   </widget>
   </widget>
-  <widget class="QCheckBox" name="checkBox_keepratio">
+  <widget class="QGroupBox" name="groupBox_target">
    <property name="geometry">
     <rect>
-     <x>240</x>
-     <y>20</y>
-     <width>171</width>
-     <height>20</height>
+     <x>20</x>
+     <y>180</y>
+     <width>381</width>
+     <height>61</height>
     </rect>
    </property>
-   <property name="text">
-    <string>KeepAspectRatio</string>
+   <property name="title">
+    <string>Target</string>
    </property>
+   <widget class="QComboBox" name="comboBox_target">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>341</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>

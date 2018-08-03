@@ -104,8 +104,8 @@ bool shared_queue_get_video_format(int mode, int* format, uint32_t* width,
 	if (header) {
 		*format = header->format;
 		*avgtime = (header->frame_time) / 100;
-		*width = header->canvas_width;
-		*height = header->canvas_height;
+		*width = header->recommended_width;
+		*height = header->recommended_height;
 		UnmapViewOfFile(header);
 	} else
 		success = false;

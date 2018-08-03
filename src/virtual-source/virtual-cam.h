@@ -11,6 +11,9 @@ extern "C"
 #define DECLARE_PTR(type, ptr, expr) type* ptr = (type*)(expr);
 
 EXTERN_C const GUID CLSID_OBS_VirtualV;
+EXTERN_C const GUID CLSID_OBS_VirtualV2;
+EXTERN_C const GUID CLSID_OBS_VirtualV3;
+EXTERN_C const GUID CLSID_OBS_VirtualV4;
 
 class CVCamStream;
 
@@ -26,6 +29,10 @@ struct format
 	int64_t time_per_frame;
 };
 
+extern CUnknown * WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT *phr);
+extern CUnknown * WINAPI CreateInstance2(LPUNKNOWN lpunk, HRESULT *phr);
+extern CUnknown * WINAPI CreateInstance3(LPUNKNOWN lpunk, HRESULT *phr);
+extern CUnknown * WINAPI CreateInstance4(LPUNKNOWN lpunk, HRESULT *phr);
 
 class CVCam : public CSource
 {
@@ -34,11 +41,11 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 	//  IUnknown
 	//////////////////////////////////////////////////////////////////////////
-	static CUnknown * WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT *phr);
+	
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
 	IFilterGraph *GetGraph() { return m_pGraph; }
 	FILTER_STATE GetState(){ return m_State; }
-	CVCam(LPUNKNOWN lpunk, HRESULT *phr, const GUID id);
+	CVCam(LPUNKNOWN lpunk, HRESULT *phr, const GUID id, int mode);
 protected:
 	CVCamStream *stream = nullptr;
 
@@ -85,7 +92,7 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 	//  CSourceStream
 	//////////////////////////////////////////////////////////////////////////
-	CVCamStream(HRESULT *phr, CVCam *pParent, LPCWSTR pPinName);
+	CVCamStream(HRESULT *phr, CVCam *pParent, LPCWSTR pPinName, int mode);
 	~CVCamStream();
 
 	HRESULT FillBuffer(IMediaSample *pms);
@@ -95,14 +102,13 @@ public:
 	HRESULT SetMediaType(const CMediaType *pmt);
 	HRESULT OnThreadCreate(void);
 	HRESULT OnThreadDestroy(void);
-	void SetShareQueueMode(int mode);
-
+	
 private:
 
-	bool CheckObsSetting();
+	bool ListSupportFormat(void);
+	bool CheckObsSetting(void);
 	bool ValidateResolution(long width, long height);
-	bool ListSupportFormat();
-	void SetConvertContext();
+	void SetConvertContext(void);
 
 	CVCam *parent;
 	std::deque<format> format_list;
@@ -110,7 +116,7 @@ private:
 	//for Fillbuffer() use
 	share_queue queue = {};
 	bool reset_mode = false;
-	int mode = 0;
+	int queue_mode = 0;
 	int format = 0;
 	uint8_t* dst;
 	uint32_t frame_width = 0;

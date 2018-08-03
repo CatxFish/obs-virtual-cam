@@ -13,20 +13,41 @@
 #define MIN_FRAMETIME 166666
 
 
-CUnknown * WINAPI CVCam::CreateInstance(LPUNKNOWN lpunk, HRESULT *phr)
+CUnknown * WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT *phr)
 {
 	ASSERT(phr);
-	CUnknown *punk = new CVCam(lpunk, phr, CLSID_OBS_VirtualV);
+	CUnknown *punk = new CVCam(lpunk, phr, CLSID_OBS_VirtualV, ModeVideo);
 	return punk;
 }
 
-CVCam::CVCam(LPUNKNOWN lpunk, HRESULT *phr, const GUID id) :
+CUnknown * WINAPI CreateInstance2(LPUNKNOWN lpunk, HRESULT *phr)
+{
+	ASSERT(phr);
+	CUnknown *punk = new CVCam(lpunk, phr, CLSID_OBS_VirtualV2, ModeVideo2);
+	return punk;
+}
+
+CUnknown * WINAPI CreateInstance3(LPUNKNOWN lpunk, HRESULT *phr)
+{
+	ASSERT(phr);
+	CUnknown *punk = new CVCam(lpunk, phr, CLSID_OBS_VirtualV3, ModeVideo3);
+	return punk;
+}
+
+CUnknown * WINAPI CreateInstance4(LPUNKNOWN lpunk, HRESULT *phr)
+{
+	ASSERT(phr);
+	CUnknown *punk = new CVCam(lpunk, phr, CLSID_OBS_VirtualV4, ModeVideo4);
+	return punk;
+}
+
+CVCam::CVCam(LPUNKNOWN lpunk, HRESULT *phr, const GUID id, int mode) :
 CSource(NAME("OBS Virtual CAM"), lpunk, id)
 {
 	ASSERT(phr);
 	CAutoLock cAutoLock(&m_cStateLock);
 	m_paStreams = (CSourceStream **) new CVCamStream*[1];
-	stream = new CVCamStream(phr, this, L"Video");
+	stream = new CVCamStream(phr, this, L"Video", mode);
 	m_paStreams[0] = stream;
 }
 
@@ -38,30 +59,24 @@ HRESULT CVCam::NonDelegatingQueryInterface(REFIID riid, void **ppv)
 		return CSource::NonDelegatingQueryInterface(riid, ppv);
 }
 
-CVCamStream::CVCamStream(HRESULT *phr, CVCam *pParent, LPCWSTR pPinName) :
+CVCamStream::CVCamStream(HRESULT *phr, CVCam *pParent, LPCWSTR pPinName, int mode) :
 CSourceStream(NAME("Video"), phr, pParent, pPinName), parent(pParent)
 {
+	queue_mode = mode;
 	ListSupportFormat();
 	use_obs_format_init = CheckObsSetting();
-	GetMediaType(0,&m_mt);
+	GetMediaType(0, &m_mt);
 	prev_end_ts = 0;
-	mode = ModeVideo;
 }
 
 CVCamStream::~CVCamStream()
 {
 }
 
-void CVCamStream::SetShareQueueMode(int queue_mode)
-{
-	mode = queue_mode;
-	reset_mode = true;
-}
-
 bool CVCamStream::CheckObsSetting()
 {
-	bool get = shared_queue_get_video_format(mode,&obs_format, &obs_width,
-		&obs_height, &obs_frame_time);
+	bool get = shared_queue_get_video_format(queue_mode,&obs_format, 
+		&obs_width, &obs_height, &obs_frame_time);
 
 
 	if (get) {
@@ -123,8 +138,8 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 	hr = pms->GetPointer((BYTE**)&dst);
 
 	if (!queue.hwnd) {
-		if (shared_queue_open(&queue, mode)) {
-			shared_queue_get_video_format(mode, &format, &frame_width,
+		if (shared_queue_open(&queue, queue_mode)) {
+			shared_queue_get_video_format(queue_mode, &format, &frame_width,
 				&frame_height, &time_perframe);
 			SetConvertContext();
 			reset_mode = false;
@@ -202,7 +217,6 @@ HRESULT CVCamStream::SetMediaType(const CMediaType *pmt)
 
 HRESULT CVCamStream::GetMediaType(int iPosition,CMediaType *pmt)
 {
-
 	if (format_list.size() == 0)
 		ListSupportFormat();
 
@@ -352,10 +366,10 @@ HRESULT STDMETHODCALLTYPE CVCamStream::GetFormat(AM_MEDIA_TYPE **ppmt)
 HRESULT STDMETHODCALLTYPE CVCamStream::GetNumberOfCapabilities(int *piCount, 
 	int *piSize)
 {
-	*piCount = 4;
-	if (use_obs_format_init)
-		*piCount = *piCount + 1;
-
+	if (format_list.size() == 0)
+		ListSupportFormat();
+	
+	*piCount = format_list.size();
 	*piSize = sizeof(VIDEO_STREAM_CONFIG_CAPS);
 	return S_OK;
 }

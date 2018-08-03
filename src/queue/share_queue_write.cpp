@@ -43,12 +43,10 @@ bool shared_queue_create(share_queue* q, int mode, int format,
 		q_head->state = OutputStart;
 		q_head->frame_time = frame_time;
 		q_head->delay_frame = 5;
-		q_head->canvas_width = width;
-		q_head->canvas_height = height;
+		q_head->recommended_width = width;
+		q_head->recommended_height = height;
 		q->mode = mode;
 		q->index = 0;
-		q->operating_width = width;
-		q->operating_height = height;
 	}
 
 	return (q->hwnd != NULL && q->header != NULL);
@@ -66,98 +64,61 @@ void shared_queue_write_close(share_queue* q)
 	}
 }
 
-void copy_video(uint8_t* dst, uint8_t* src, uint32_t linesize, uint32_t height,
-	uint32_t width)
-{
-	for (int i = 0; i < height; i++) {
-		memcpy(dst, src, width);
-		dst += width;
-		src += linesize;
-	}
-}
-
-bool shared_queue_push_video(share_queue* q, uint32_t* linesize,
-	uint32_t height, uint8_t** data, uint64_t timestamp, int* crop)
+bool shared_queue_push_video(share_queue* q, uint32_t* linesize, 
+	uint32_t width, uint32_t height, uint8_t** data, uint64_t timestamp)
 {
 	if (!q || !q->header)
 		return false;
 
 	frame_header* frame = get_frame_header(q->header, q->index);
 	uint8_t* dst = (uint8_t*)frame + q->header->element_header_size;
-	uint8_t* src[4];
-	uint32_t width = q->operating_width - crop[0] - crop[2];
 	int planes = 0;
-	int fmt = q->header->format;
-	height = height - crop[1] - crop[3];
 	
-
-	switch (fmt) {
+	switch (q->header->format) {
 	case AV_PIX_FMT_NONE:
 		return false;
 
 	case AV_PIX_FMT_YUV420P:
-		src[0] = data[0] + crop[1] * linesize[0] + crop[0];
-		src[1] = data[1] + crop[1] * linesize[1] / 2 + crop[0] / 2;
-		src[2] = data[2] + crop[1] * linesize[2] / 2 + crop[0] / 2;
-		frame->linesize[0] = width;
-		frame->linesize[1] = width / 2;
-		frame->linesize[2] = width / 2;	
-		copy_video(dst, src[0], linesize[0], height, width);
-		dst += width * height;		
-		copy_video(dst, src[1], linesize[1], height / 2, width / 2);
-		dst += width * height / 4;
-		copy_video(dst, src[2], linesize[2], height / 2, width / 2);
+		planes = 3;
+		memcpy(dst, data[0], linesize[0] * height);
+		dst += linesize[0] * height;
+		memcpy(dst, data[1], linesize[1] * height / 2);
+		dst += linesize[1] * height / 2;
+		memcpy(dst, data[2], linesize[2] * height / 2);
 		break;
 
 	case AV_PIX_FMT_NV12:
-		src[0] = data[0] + crop[1] * linesize[0] + crop[0];
-		src[1] = data[1] + crop[1] * linesize[1] / 2 + crop[0];
-		frame->linesize[0] = width;
-		frame->linesize[1] = width;
-		copy_video(dst, src[0], linesize[0], height, width);
-		dst += width * height;
-		copy_video(dst, src[1], linesize[1], height / 2, width);
+		planes = 2;
+		memcpy(dst, data[0], linesize[0] * height);
+		dst += linesize[0] * height;
+		memcpy(dst, data[1], linesize[1] * height / 2);
 		break;
 
 	case AV_PIX_FMT_GRAY8:
-		src[0] = data[0] + crop[1] * linesize[0] + crop[0];
-		frame->linesize[0] = width;
-		copy_video(dst, src[0], linesize[0], height, width);
-		break;
-
 	case AV_PIX_FMT_YUYV422:
 	case AV_PIX_FMT_UYVY422:
-		src[0] = data[0] + crop[1] * linesize[0] + crop[0] * 2;
-		frame->linesize[0] = width * 2;
-		copy_video(dst, src[0], linesize[0], height, width * 2);
-		break;
-
 	case AV_PIX_FMT_RGBA:
 	case AV_PIX_FMT_BGRA:
-		src[0] = data[0] + crop[1] * linesize[0] + crop[0] * 4;
-		frame->linesize[0] = width * 4;
-		copy_video(dst, src[0], linesize[0], height, width * 4);
+		planes = 1;
+		memcpy(dst, data[0], linesize[0] * height);
 		break;
 
 	case AV_PIX_FMT_YUV444P:
-		src[0] = data[0] + crop[1] * linesize[0] + crop[0];
-		src[1] = data[1] + crop[1] * linesize[1] + crop[0];
-		src[2] = data[2] + crop[1] * linesize[2] + crop[0];
-		frame->linesize[0] = width;
-		frame->linesize[1] = width;
-		frame->linesize[2] = width;
-		copy_video(dst, src[0], linesize[0], height, width);
-		dst += width * height;
-		copy_video(dst, src[1], linesize[1], height, width);
-		dst += width * height;
-		copy_video(dst, src[2], linesize[2], height, width);
+		planes = 3;
+		memcpy(dst, data[0], linesize[0] * height);
+		dst += linesize[0] * height;
+		memcpy(dst, data[1], linesize[1] * height);
+		dst += linesize[1] * height;
+		memcpy(dst, data[2], linesize[2] * height);
 		break;
 	}
 
-	frame->timestamp = timestamp;
-	frame->frame_width = q->operating_width - crop[0] - crop[2];
-	frame->frame_height = q->operating_height - crop[1] - crop[3];
+	for (int i = 0; i < planes; i++)
+		frame->linesize[i] = linesize[i];
 
+	frame->timestamp = timestamp;
+	frame->frame_width = width;
+	frame->frame_height = height;
 	q->header->write_index = q->index;
 
 	q->index++;
@@ -230,5 +191,16 @@ bool shared_queue_set_keep_ratio(share_queue* q, bool keep_ratio)
 		q->header->aspect_ratio_type = 1;
 	else
 		q->header->aspect_ratio_type = 0;
+	return true;
+}
+
+bool shared_queue_set_recommended_format(share_queue* q, int width, int height)
+{
+	if (!q || !q->header)
+		return false;
+
+	q->header->recommended_width = width;
+	q->header->recommended_height = height;
+
 	return true;
 }

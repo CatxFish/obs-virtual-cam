@@ -5,7 +5,6 @@
 #include "obs.h"
 
 struct vcam_update_data{
-	int crop[4];
 	bool horizontal_flip = false;
 	bool keep_ratio = false;
 };
@@ -28,9 +27,6 @@ public:
 private Q_SLOTS:
 	void onStart();
 	void onStop();
-	void onGetSourceRegion();
-	void onChangeCropValue();
-	void onChangeCropEnable();
 	void onClickHorizontalFlip();
 	void onClickKeepAspectRatio();
 
@@ -40,12 +36,7 @@ private:
 	struct vcam_update_data update_data;
 	QString scene_name;
 	void UpdateParameter();
-	void ValidateRegion(int& left, int& top, int& right, int& bottom);
 	void SaveSetting();
-	bool GetItemRegion(obs_sceneitem_t* item,int& left, int& top, int& right, 
-		int& bottom);
-	static bool ListSource(obs_scene_t* scene, obs_sceneitem_t* item, 
-		void* ui);
 };
 
 #endif // VIRTUAL_PROPERTIES_H
