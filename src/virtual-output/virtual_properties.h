@@ -3,10 +3,13 @@
 
 #include <QDialog>
 #include "obs.h"
+#include "../queue/share_queue_write.h"
 
 struct vcam_update_data{
 	bool horizontal_flip = false;
 	bool keep_ratio = false;
+	int delay = 0;
+	int mode = 0;
 };
 
 namespace Ui {
@@ -23,6 +26,8 @@ public:
 	void SetVisable();
 	void showEvent(QShowEvent *event);
 	void closeEvent(QCloseEvent *event);
+	void EnableOptions(bool enable);
+	void ShowWarning(bool show);
 
 private Q_SLOTS:
 	void onStart();
@@ -37,6 +42,7 @@ private:
 	QString scene_name;
 	void UpdateParameter();
 	void SaveSetting();
+	static void onStopSignal(void *data, calldata_t *cd);
 };
 
 #endif // VIRTUAL_PROPERTIES_H

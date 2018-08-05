@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>428</width>
-    <height>385</height>
+    <height>399</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QPushButton" name="pushButtonStart">
    <property name="geometry">
     <rect>
-     <x>240</x>
-     <y>340</y>
+     <x>230</x>
+     <y>360</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -29,8 +29,8 @@
   <widget class="QPushButton" name="pushButtonStop">
    <property name="geometry">
     <rect>
-     <x>330</x>
-     <y>340</y>
+     <x>320</x>
+     <y>360</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -167,6 +167,19 @@
      </rect>
     </property>
    </widget>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>330</y>
+     <width>371</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Failed</string>
+   </property>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>

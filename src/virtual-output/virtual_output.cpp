@@ -1,15 +1,9 @@
 #include <obs-module.h>
-#include <util/platform.h>
-#include <util/threading.h>
 #include <util/config-file.h>
-#include "../queue/share_queue_write.h"
 #include "virtual_output.h"
 #include "virtual_properties.h"
 #include "get_format.h"
 #include "hflip.h"
-#include "math.h"
-
-#define round_even(x) {x&(-2)}
 
 struct virtual_out_data {
 	obs_output_t *output = nullptr;
@@ -19,6 +13,7 @@ struct virtual_out_data {
 	int width = 0;
 	int height = 0;
 	int delay = 0;
+	int video_mode = 0;
 	int64_t last_video_ts = 0;
 	bool hori_flip;
 	bool keep_ratio;
@@ -34,18 +29,39 @@ static const char *virtual_output_getname(void *unused)
 	return obs_module_text("VirtualOutput");
 }
 
+void virtual_signal_connect(const char *signal,
+	signal_callback_t callback, void *data)
+{
+	signal_handler_t *handler = obs_output_get_signal_handler(virtual_out);
+	signal_handler_connect(handler, signal, callback, data);
+}
+
+void virtual_signal_disconnect(const char *signal,
+	signal_callback_t callback, void *data)
+{
+	signal_handler_t *handler = obs_output_get_signal_handler(virtual_out);
+	signal_handler_disconnect(handler, signal, callback, data);
+}
+
+static void virtual_signal_stop(const char *msg, bool start_fail)
+{
+	struct calldata call_data;
+	calldata_init(&call_data);
+	calldata_set_string(&call_data, "msg", msg);
+	calldata_set_bool(&call_data, "start_fail", start_fail);
+	signal_handler_t *handler = obs_output_get_signal_handler(virtual_out);
+	signal_handler_signal(handler, "output_stop", &call_data);
+	calldata_free(&call_data);
+}
+
 static void virtual_output_destroy(void *data)
 {
 	output_running = false;
 	virtual_out_data *out_data = (virtual_out_data*)data;
 	if (out_data) {
-		pthread_mutex_lock(&out_data->mutex);
-		release_flip_filter(&out_data->flip_ctx);
-		pthread_mutex_unlock(&out_data->mutex);
 		pthread_mutex_destroy(&out_data->mutex);
 		bfree(data);
-	}
-	
+	}	
 }
 static void *virtual_output_create(obs_data_t *settings, obs_output_t *output)
 {
@@ -54,6 +70,7 @@ static void *virtual_output_create(obs_data_t *settings, obs_output_t *output)
 	
 	data->output = output;
 	data->delay = obs_data_get_int(settings, "delay_frame");
+	data->video_mode = obs_data_get_int(settings, "v_mode");
 	pthread_mutex_init_value(&data->mutex);
 	if (pthread_mutex_init(&data->mutex, NULL) == 0) {
 		UNUSED_PARAMETER(settings);
@@ -66,6 +83,7 @@ static void *virtual_output_create(obs_data_t *settings, obs_output_t *output)
 
 static bool virtual_output_start(void *data)
 {
+	bool start = false;
 	virtual_out_data* out_data = (virtual_out_data*)data;
 	video_t *video = obs_output_video(out_data->output);
 	out_data->width = (int32_t)obs_output_get_width(out_data->output);
@@ -75,27 +93,33 @@ static bool virtual_output_start(void *data)
 	double fps = video_output_get_frame_rate(video);
 	uint64_t interval = static_cast<int64_t>(1000000000 / fps);
 
-	bool start = shared_queue_create(&out_data->video_queue, ModeVideo, fmt,
-		out_data->width, out_data->height, interval, out_data->delay + 10);
 
-	start |= shared_queue_create(&out_data->audio_queue, ModeAudio, fmt, 
-		AUDIO_SIZE, 1, interval,
-		video_frame_to_audio_frame(fps, out_data->delay + 10, 44100 * 4, AUDIO_SIZE));
+	start = shared_queue_create(&out_data->video_queue,
+		out_data->video_mode, fmt, out_data->width, out_data->height,
+		interval, out_data->delay + 10);
 
-	struct audio_convert_info conv = {};
-	conv.format = AUDIO_FORMAT_16BIT;
-	conv.samples_per_sec = 44100;
-	conv.speakers = SPEAKERS_STEREO;
-
-	obs_output_set_audio_conversion(out_data->output, &conv);
-
-	init_flip_filter(&out_data->flip_ctx, out_data->width, out_data->height, 
-		fmt);
+	start &= shared_queue_create(&out_data->audio_queue, ModeAudio, fmt,
+		AUDIO_SIZE, 1, interval, video_frame_to_audio_frame(fps, 
+		out_data->delay + 10, 44100 * 4, AUDIO_SIZE));
 
 	if (start) {
+		struct audio_convert_info conv = {};
+		conv.format = AUDIO_FORMAT_16BIT;
+		conv.samples_per_sec = 44100;
+		conv.speakers = SPEAKERS_STEREO;
+		obs_output_set_audio_conversion(out_data->output, &conv);
+
+		init_flip_filter(&out_data->flip_ctx, out_data->width, 
+			out_data->height, fmt);
+		output_running = true;
 		shared_queue_set_delay(&out_data->video_queue, out_data->delay);
 		shared_queue_set_delay(&out_data->audio_queue, out_data->delay);
 		start = obs_output_begin_data_capture(out_data->output, 0);
+	} else {
+		output_running = false;
+		virtual_signal_stop("stop", true);
+		shared_queue_write_close(&out_data->video_queue);
+		shared_queue_write_close(&out_data->audio_queue);		
 	}
 
 	return start;
@@ -105,8 +129,13 @@ static void virtual_output_stop(void *data, uint64_t ts)
 {
 	virtual_out_data *out_data = (virtual_out_data*)data;
 	obs_output_end_data_capture(out_data->output);
+	pthread_mutex_lock(&out_data->mutex);
+	release_flip_filter(&out_data->flip_ctx);
+	pthread_mutex_unlock(&out_data->mutex);
 	shared_queue_write_close(&out_data->video_queue);
 	shared_queue_write_close(&out_data->audio_queue);
+	virtual_signal_stop("stop", false);
+	output_running = false;
 }
 
 static void virtual_video(void *param, struct video_data *frame)
@@ -144,13 +173,10 @@ static void virtual_audio(void *param, struct audio_data *frame)
 static void virtual_output_update(void *data, obs_data_t *settings)
 {
 	virtual_out_data *out_data = (virtual_out_data*)data;
-	obs_video_info vif;
-	obs_get_video_info(&vif);
-	int crop[4];
-	int b_width = vif.base_width;
-	int b_height = vif.base_height;
 	bool hori_flip = obs_data_get_bool(settings, "hori-flip");
 	bool keep_ratio = obs_data_get_bool(settings, "keep-ratio");
+	out_data->delay = obs_data_get_int(settings, "delay_frame");
+	out_data->video_mode = obs_data_get_int(settings, "v_mode");
 
 	if (hori_flip != out_data->hori_flip ||
 		keep_ratio != out_data->keep_ratio) {
@@ -193,53 +219,48 @@ struct obs_output_info create_output_info()
 	return output_info;
 }
 
-void virtual_output_enable(int delay)
+void virtual_output_init()
 {
-	if (delay < 0 || delay>30)
-		delay = 3;
+	obs_output_info virtual_output_info = create_output_info();
+	obs_register_output(&virtual_output_info);
+	obs_data_t *settings = obs_data_create();
+	virtual_out = obs_output_create("virtual_output", "VirtualOutput",
+		settings, NULL);
+	obs_data_release(settings);
+	signal_handler_t *handler = obs_output_get_signal_handler(virtual_out);
+	signal_handler_add(handler, "void output_stop(string msg, bool opening)");
+}
 
-	if (!output_running) {
-		obs_data_t *settings = obs_data_create();
-		obs_data_set_int(settings, "delay_frame", delay);
-		virtual_out = obs_output_create("virtual_output", "VirtualOutput",
-			settings, NULL);
-		obs_output_start(virtual_out);
-		output_running = true;
-		obs_data_release(settings);
-	}
+void virtual_output_terminate()
+{	
+	obs_output_release(virtual_out);
+}
+
+void virtual_output_enable()
+{
+	obs_output_start(virtual_out);
+	output_running = true;
 }
 
 void virtual_output_disable()
 {
-	if (output_running) {
-		output_running = false;
-		obs_output_stop(virtual_out);
-		obs_output_release(virtual_out);	
-	}
+	obs_output_stop(virtual_out);
 }
 
 void virtual_output_set_data(struct vcam_update_data* update_data)
 {
-	if (output_running) {
-		obs_data_t *settings = obs_data_create();
-		obs_data_set_bool(settings, "hori-flip", update_data->horizontal_flip);
-		obs_data_set_bool(settings, "keep-ratio", update_data->keep_ratio);
-		obs_output_update(virtual_out, settings);
-		obs_data_release(settings);
-	}
+	obs_data_t *settings = obs_data_create();
+	obs_data_set_bool(settings, "hori-flip", update_data->horizontal_flip);
+	obs_data_set_bool(settings, "keep-ratio", update_data->keep_ratio);
+	obs_data_set_int(settings, "delay_frame", update_data->delay);
+	obs_data_set_int(settings, "v_mode", update_data->mode);
+	obs_output_update(virtual_out, settings);
+	obs_data_release(settings);
 }
 
 bool virtual_output_is_running()
 {
 	return output_running;
-}
-
-bool virtual_output_occupied()
-{
-	if (virtual_output_is_running())
-		return false;
-
-	return !(shared_queue_check(ModeVideo) && shared_queue_check(ModeAudio));
 }
 
 int video_frame_to_audio_frame(double video_fps, int video_frame, 

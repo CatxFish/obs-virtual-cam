@@ -61,6 +61,9 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 	if (!target || width == 0 || height == 0)
 		return;
 
+	width = min(filter->base_width, width);
+	height = min(filter->base_height, height);
+
 	gs_texrender_reset(filter->texrender);
 
 	if (!gs_texrender_begin(filter->texrender, width, height))
@@ -205,4 +208,10 @@ struct obs_source_info create_filter_info()
 	filter_info.get_properties = virtual_filter_properties;
 	filter_info.get_defaults = virtual_filter_defaults;
 	return filter_info;
+}
+
+void virtual_filter_init()
+{
+	obs_source_info virtual_filter_info = create_filter_info();
+	obs_register_source(&virtual_filter_info);
 }

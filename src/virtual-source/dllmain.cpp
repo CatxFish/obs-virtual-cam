@@ -230,6 +230,20 @@ STDAPI RegisterFilters(BOOL bRegister,int reg_video_filters)
 	return hr;
 }
 
+STDAPI DllInstall(BOOL bInstall, _In_opt_ LPCWSTR pszCmdLine)
+{
+	if (!bInstall)
+		return RegisterFilters(FALSE, NUM_VIDEO_FILTERS);
+	else if (lstrcmpW(pszCmdLine, L"1") == 0)
+		return RegisterFilters(TRUE, 1);
+	else if (lstrcmpW(pszCmdLine, L"2") == 0)
+		return RegisterFilters(TRUE, 2);
+	else if (lstrcmpW(pszCmdLine, L"3") == 0)
+		return RegisterFilters(TRUE, 3);
+	else
+		return RegisterFilters(TRUE, NUM_VIDEO_FILTERS);
+}
+
 STDAPI DllRegisterServer()
 {
 	return RegisterFilters(TRUE, NUM_VIDEO_FILTERS);
@@ -238,20 +252,6 @@ STDAPI DllRegisterServer()
 STDAPI DllUnregisterServer()
 {
 	return RegisterFilters(FALSE, NUM_VIDEO_FILTERS);
-}
-
-STDAPI DllInstall(BOOL bInstall, PCWSTR pszCmdLine)
-{
-	if (!bInstall)
-		return RegisterFilters(FALSE, NUM_VIDEO_FILTERS);
-	else if(lstrcmpW(pszCmdLine,L"1") == 0)
-		return RegisterFilters(TRUE, 1);
-	else if (lstrcmpW(pszCmdLine, L"2") == 0)
-		return RegisterFilters(TRUE, 2);
-	else if (lstrcmpW(pszCmdLine, L"3") == 0)
-		return RegisterFilters(TRUE, 3);
-	else
-		return RegisterFilters(TRUE, NUM_VIDEO_FILTERS);
 }
 
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);

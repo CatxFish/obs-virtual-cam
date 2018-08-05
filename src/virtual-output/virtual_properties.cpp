@@ -4,7 +4,6 @@
 #include <math.h>
 #include <obs-frontend-api.h>
 #include <util/config-file.h>
-#include <qmessagebox.h>
 
 VirtualProperties::VirtualProperties(QWidget *parent) :
     QDialog(parent),
@@ -28,17 +27,28 @@ VirtualProperties::VirtualProperties(QWidget *parent) :
 	config_set_default_bool(config, "VirtualOutput", "HoriFlip", false);
 	config_set_default_bool(config, "VirtualOutput", "KeepRatio", false);
 	config_set_default_int(config, "VirtualOutput", "OutDelay", 3);	
+	config_set_default_int(config, "VirtualOutput", "Target", 0);
 	bool autostart = config_get_bool(config, "VirtualOutput", "AutoStart");
 	bool hori_flip = config_get_bool(config, "VirtualOutput", "HoriFlip");
 	bool keep_ratio = config_get_bool(config, "VirtualOutput", "KeepRatio");
 	int delay = config_get_int(config, "VirtualOutput", "OutDelay");
+	int target = config_get_int(config, "VirtualOutput", "Target");
 
 	
 	ui->checkBox_auto->setChecked(autostart);
 	ui->checkBox_horiflip->setChecked(hori_flip);
 	ui->checkBox_keepratio->setChecked(keep_ratio);
+	ui->comboBox_target->addItem("OBS-Camera", ModeVideo);
+	ui->comboBox_target->addItem("OBS-Camera2", ModeVideo2);
+	ui->comboBox_target->addItem("OBS-Camera3", ModeVideo3);
+	ui->comboBox_target->addItem("OBS-Camera4", ModeVideo4);
+	ui->comboBox_target->setCurrentIndex(
+		ui->comboBox_target->findData(target));
 	ui->spinBox->setValue(delay);
 	ui->horizontalSlider->setValue(delay);
+	ui->label->setStyleSheet("QLabel { color : red; }");
+	ui->label->setVisible(false);
+	ui->pushButtonStop->setEnabled(false);
 	update_data.keep_ratio = keep_ratio;
 	update_data.horizontal_flip = hori_flip;
 
@@ -51,6 +61,7 @@ VirtualProperties::VirtualProperties(QWidget *parent) :
 VirtualProperties::~VirtualProperties()
 {
 	virtual_output_disable();
+	virtual_output_terminate();
 	SaveSetting();
     delete ui;
 }
@@ -60,24 +71,42 @@ void VirtualProperties::SetVisable()
 	setVisible(!isVisible());
 }
 
+void VirtualProperties::EnableOptions(bool enable)
+{
+	ui->spinBox->setEnabled(enable);
+	ui->horizontalSlider->setEnabled(enable);
+	ui->comboBox_target->setEnabled(enable);
+	ui->pushButtonStart->setEnabled(enable);
+	ui->pushButtonStop->setEnabled(!enable);
+}
+
+void VirtualProperties::ShowWarning(bool show)
+{
+	ui->label->setVisible(show);
+}
+
 void VirtualProperties::onStart()
 {
-	int delay = ui->horizontalSlider->value();
-	ui->spinBox->setEnabled(false);
-	ui->horizontalSlider->setEnabled(false);
-	virtual_output_enable(delay + 1);
-	ui->pushButtonStart->setEnabled(false);
-	ui->pushButtonStop->setEnabled(true);
+	ShowWarning(false);
 	UpdateParameter();
+	EnableOptions(false);
+	virtual_signal_connect("output_stop", onStopSignal, this);
+	virtual_output_enable();
 }
 
 void VirtualProperties::onStop()
 {
 	virtual_output_disable();
-	ui->spinBox->setEnabled(true);
-	ui->horizontalSlider->setEnabled(true);
-	ui->pushButtonStart->setEnabled(true);
-	ui->pushButtonStop->setEnabled(false);
+}
+
+void VirtualProperties::onStopSignal(void *data, calldata_t *cd)
+{
+	auto page = (VirtualProperties*)data;
+	bool start_fail = calldata_bool(cd, "start_fail");
+	if (start_fail)
+		page->ShowWarning(true);
+	page->EnableOptions(true);
+	virtual_signal_disconnect("output_stop", onStopSignal, data);
 }
 
 void VirtualProperties::UpdateParameter()
@@ -85,6 +114,8 @@ void VirtualProperties::UpdateParameter()
 
 	update_data.horizontal_flip = ui->checkBox_horiflip->isChecked();
 	update_data.keep_ratio = ui->checkBox_keepratio->isChecked();
+	update_data.delay = ui->horizontalSlider->value();
+	update_data.mode = ui->comboBox_target->currentData().toInt();
 	virtual_output_set_data(&update_data);
 }
 
@@ -100,17 +131,6 @@ void VirtualProperties::onClickKeepAspectRatio()
 
 void VirtualProperties::showEvent(QShowEvent *event)
 {
-	if (virtual_output_occupied()) {
-		ui->spinBox->setEnabled(false);
-		ui->horizontalSlider->setEnabled(false);
-		ui->pushButtonStart->setEnabled(false);
-		ui->pushButtonStop->setEnabled(false);
-	} else {
-		ui->spinBox->setEnabled(!virtual_output_is_running());
-		ui->horizontalSlider->setEnabled(!virtual_output_is_running());
-		ui->pushButtonStart->setEnabled(!virtual_output_is_running());
-		ui->pushButtonStop->setEnabled(virtual_output_is_running());
-	}
 }
 
 void VirtualProperties::closeEvent(QCloseEvent *event)
