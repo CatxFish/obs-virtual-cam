@@ -32,8 +32,10 @@ set(PTHREAD_LIB "PTHREAD_LIB-NOTFOUND" CACHE FILEPATH "PTHREAD library")
 	endif()		
 	
 set(virtualoutput_SOURCES
+	virtual_main.cpp
 	virtual_output.cpp
 	virtual_properties.cpp
+	virtual_filter.cpp
 	hflip.cpp
 	../queue/share_queue_write.cpp
 	)
@@ -42,6 +44,7 @@ set(virtualoutput_HEADERS
 	get_format.h
 	virtual_output.h
 	virtual_properties.h
+	virtual_filter.h
 	hflip.h
 	../queue/share_queue_write.h
 	../queue/share_queue.h
