@@ -8,6 +8,7 @@
 #define S_STOP              "stop"
 #define S_TARGET            "target"
 #define S_FLIP              "flip"
+#define S_RATIO             "keep-ratio"
 
 #define T_(v)               obs_module_text(v)
 #define T_DELAY             T_("DelayFrame")
@@ -15,6 +16,7 @@
 #define T_STOP              T_("StopOutput")
 #define T_TARGET            T_("Target")
 #define T_FLIP              T_("HorizontalFlip")
+#define T_RATIO             T_("KeepAspectRatio")
 
 struct virtual_filter_data {
 	obs_source_t* context = nullptr;
@@ -64,6 +66,9 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 	if (!target || width == 0 || height == 0)
 		return;
 
+	width = min(filter->base_width, width);
+	height = min(filter->base_height, height);
+
 	gs_texrender_reset(filter->texrender);
 
 	if (!gs_texrender_begin(filter->texrender, width, height))
@@ -75,7 +80,7 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 
 	if(filter->flip) {
 		gs_matrix_scale3f(-1.0f, 1.0f, 1.0f);
-		gs_matrix_translate3f(-width, 0.0f, 0.0f);
+		gs_matrix_translate3f(-(float)width, 0.0f, 0.0f);
 	}
 
 	gs_blend_state_push();
@@ -83,9 +88,6 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 	obs_source_video_render(target);
 	gs_blend_state_pop();
 	gs_texrender_end(filter->texrender);
-
-	width = min(filter->base_width, width);
-	height = min(filter->base_height, height);
 
 	if (filter->width != width || filter->height != height) {
 		gs_stagesurface_destroy(filter->stagesurface);
@@ -112,7 +114,7 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 static void virtual_filter_destroy(void *data)
 {
 	virtual_filter_data *filter = (virtual_filter_data *)data;
-	if (filter){
+	if (filter) {
 		obs_remove_main_render_callback(virtual_filter_video, data);
 		shared_queue_write_close(&filter->video_queue);
 		gs_stagesurface_destroy(filter->stagesurface);
@@ -124,9 +126,11 @@ static void virtual_filter_destroy(void *data)
 static void virtual_filter_update(void* data, obs_data_t* settings)
 {
 	virtual_filter_data *filter = (virtual_filter_data *)data;
+	bool keep_ratio = obs_data_get_bool(settings, S_RATIO);
 	filter->delay = (int)obs_data_get_int(settings, S_DELAY);
 	filter->mode = (int)obs_data_get_int(settings, S_TARGET);
 	filter->flip = obs_data_get_bool(settings, S_FLIP);
+	shared_queue_set_keep_ratio(&filter->video_queue, keep_ratio);	
 }
 
 static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
@@ -189,6 +193,7 @@ static obs_properties_t *virtual_filter_properties(void *data)
 	obs_property_list_add_int(cb, "OBS-Camera4", ModeVideo4);
 
 	obs_properties_add_bool(props, S_FLIP, T_FLIP);
+	obs_properties_add_bool(props, S_RATIO, T_RATIO);
 
 	start = obs_properties_add_button(props, S_START, T_START, 
 		virtual_filter_start);
