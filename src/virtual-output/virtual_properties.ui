@@ -178,7 +178,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Failed</string>
+    <string>StartFailed</string>
    </property>
   </widget>
  </widget>
