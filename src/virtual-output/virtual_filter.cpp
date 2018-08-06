@@ -7,23 +7,26 @@
 #define S_START             "start"
 #define S_STOP              "stop"
 #define S_TARGET            "target"
+#define S_FLIP              "flip"
 
 #define T_(v)               obs_module_text(v)
 #define T_DELAY             T_("DelayFrame")
 #define T_START             T_("StartOutput")
 #define T_STOP              T_("StopOutput")
 #define T_TARGET            T_("Target")
+#define T_FLIP              T_("HorizontalFlip")
 
 struct virtual_filter_data {
-	obs_source_t* context;
-	bool active;
-	gs_texrender_t* texrender;
-	gs_stagesurf_t* stagesurface;
-	share_queue video_queue;
-	uint32_t width;
-	uint32_t height;
-	uint32_t base_width;
-	uint32_t base_height;
+	obs_source_t* context = nullptr;
+	bool active = false;
+	bool flip = false;
+	gs_texrender_t* texrender = nullptr;
+	gs_stagesurf_t* stagesurface = nullptr;
+	share_queue video_queue = {};
+	uint32_t width = 0;
+	uint32_t height = 0;
+	uint32_t base_width = 0;
+	uint32_t base_height = 0;
 	int mode = 0;
 	int delay = 0;
 };
@@ -61,9 +64,6 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 	if (!target || width == 0 || height == 0)
 		return;
 
-	width = min(filter->base_width, width);
-	height = min(filter->base_height, height);
-
 	gs_texrender_reset(filter->texrender);
 
 	if (!gs_texrender_begin(filter->texrender, width, height))
@@ -73,11 +73,19 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 	gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
 	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
 
+	if(filter->flip) {
+		gs_matrix_scale3f(-1.0f, 1.0f, 1.0f);
+		gs_matrix_translate3f(-width, 0.0f, 0.0f);
+	}
+
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
 	obs_source_video_render(target);
 	gs_blend_state_pop();
 	gs_texrender_end(filter->texrender);
+
+	width = min(filter->base_width, width);
+	height = min(filter->base_height, height);
 
 	if (filter->width != width || filter->height != height) {
 		gs_stagesurface_destroy(filter->stagesurface);
@@ -118,6 +126,7 @@ static void virtual_filter_update(void* data, obs_data_t* settings)
 	virtual_filter_data *filter = (virtual_filter_data *)data;
 	filter->delay = (int)obs_data_get_int(settings, S_DELAY);
 	filter->mode = (int)obs_data_get_int(settings, S_TARGET);
+	filter->flip = obs_data_get_bool(settings, S_FLIP);
 }
 
 static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
@@ -178,6 +187,8 @@ static obs_properties_t *virtual_filter_properties(void *data)
 	obs_property_list_add_int(cb, "OBS-Camera2", ModeVideo2);
 	obs_property_list_add_int(cb, "OBS-Camera3", ModeVideo3);
 	obs_property_list_add_int(cb, "OBS-Camera4", ModeVideo4);
+
+	obs_properties_add_bool(props, S_FLIP, T_FLIP);
 
 	start = obs_properties_add_button(props, S_START, T_START, 
 		virtual_filter_start);
