@@ -117,8 +117,10 @@ static void virtual_filter_destroy(void *data)
 	if (filter) {
 		obs_remove_main_render_callback(virtual_filter_video, data);
 		shared_queue_write_close(&filter->video_queue);
+		obs_enter_graphics();
 		gs_stagesurface_destroy(filter->stagesurface);
 		gs_texrender_destroy(filter->texrender);
+		obs_leave_graphics();
 		bfree(filter);
 	}
 }
