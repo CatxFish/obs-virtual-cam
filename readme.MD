@@ -29,7 +29,7 @@ regsvr32 "C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll
 regsvr32 /u "C:\Program Files (x86)\obs-studio\bin\32bit\obs-virtualsource.dll"
 ```
 
-# Customized register command
+# Register specific number of virtual cameras
 Unregister then register 2 directshow camera (up to 4)
 ```
 regsvr32 /u "C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll" 
@@ -48,4 +48,4 @@ Set following Cmake variables:
 - **PTHREAD_LIB** (filepath): w32-pthread.lib path
 
 # Donate
-If you like my work on this plugin , you can donate me via [Paypal.me](https://www.paypal.me/obsvirtualcam)
+If you like my work on this plugin , you can donate via [Paypal.me](https://www.paypal.me/obsvirtualcam)
