@@ -8,7 +8,7 @@ obs-virutalcam is a plugin for obs-studio , transforming the output video to a v
 # Features
 * **virtual output** : A output plugin sink raw video & audio to directshow interface.
 * **virtual filter output** : A filter plugin skink obs source video to directshow interface.
-* **virtual source** : Four Directshow Interfaces which can use in 3rd party software.
+* **virtual source** : Four directshow Interfaces which can use in 3rd party software.
 
 # Install
 The installer and compressed file can be found in [Release Page](https://github.com/CatxFish/obs-virtual-cam/releases). Using installer is recommended, but if you want to use compressed file to install manually , please follow these instructions.
