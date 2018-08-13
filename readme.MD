@@ -3,7 +3,7 @@ obs-virutalcam is a plugin for obs-studio , transforming the output video to a v
 
 **Supported Platforms** : Windows 7 , Windows 8 and Windows 10
 
-**Supported OBS Studio version** : 19.0.0+
+**Supported OBS Studio version** : 21.0.0+
 
 # Features
 * **virtual output** : A output plugin sink raw video & audio to directshow interface.
