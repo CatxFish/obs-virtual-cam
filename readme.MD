@@ -20,7 +20,7 @@ regsvr32 "C:\Program Files (x86)\obs-studio\bin\32bit\obs-virtualsource.dll"
 ```
 3. Do it again to register 64bit directshow source
 ```
-regsvr32 "C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll
+regsvr32 "C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll"
 ```
 - If you want to Remove the directshow filter , you can also use regsvr32 to do this
 ```
