@@ -16,22 +16,22 @@ The installer and compressed file can be found in [Release Page](https://github.
 1. Unzip OBS-VirtualCam.zip and put it to your obs-studio install folder.
 2. Run CMD as Administrator and register 32bit directshow source
 ```
-regsvr32 "C:\Program Files (x86)\obs-studio\bin\32bit\obs-virtualsource.dll"
+regsvr32 "C:\Program Files\obs-studio\bin\32bit\obs-virtualsource.dll"
 ```
 3. Do it again to register 64bit directshow source
 ```
-regsvr32 "C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll"
+regsvr32 "C:\Program Files\obs-studio\bin\64bit\obs-virtualsource.dll"
 ```
 - If you want to Remove the directshow filter , you can also use regsvr32 to do this
 ```
-regsvr32 /u "C:\Program Files (x86)\obs-studio\bin\32bit\obs-virtualsource.dll"
+regsvr32 /u "C:\Program Files\obs-studio\bin\32bit\obs-virtualsource.dll"
 ```
 
 # Register specific number of virtual cameras
 Unregister then register 2 directshow camera (up to 4)
 ```
-regsvr32 /u "C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll" 
-regsvr32 /n /i:"2" "C:\Program Files (x86)\obs-studio\bin\64bit\obs-virtualsource.dll"
+regsvr32 /u "C:\Program Files\obs-studio\bin\64bit\obs-virtualsource.dll" 
+regsvr32 /n /i:"2" "C:\Program Files\obs-studio\bin\64bit\obs-virtualsource.dll"
 ```
 
 
