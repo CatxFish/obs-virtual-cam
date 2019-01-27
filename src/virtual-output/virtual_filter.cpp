@@ -135,6 +135,13 @@ static void virtual_filter_update(void* data, obs_data_t* settings)
 	shared_queue_set_keep_ratio(&filter->video_queue, keep_ratio);	
 }
 
+static void virtual_filter_render(void* data, gs_effect_t* effect)
+{
+	virtual_filter_data *filter = (virtual_filter_data *)data;
+	obs_source_skip_video_filter(filter->context);
+	UNUSED_PARAMETER(effect);
+}
+
 static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
 	void *data)
 {
@@ -223,6 +230,7 @@ struct obs_source_info create_filter_info()
 	filter_info.create = virtual_filter_create;
 	filter_info.destroy = virtual_filter_destroy;
 	filter_info.update = virtual_filter_update;
+	filter_info.video_render = virtual_filter_render;
 	filter_info.get_properties = virtual_filter_properties;
 	filter_info.get_defaults = virtual_filter_defaults;
 	return filter_info;
