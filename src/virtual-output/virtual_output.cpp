@@ -22,6 +22,7 @@ struct virtual_out_data {
 
 obs_output_t *virtual_out;
 bool output_running = false;
+bool audio_running = false;
 
 static const char *virtual_output_getname(void *unused)
 {
@@ -57,6 +58,7 @@ static void virtual_signal_stop(const char *msg, bool start_fail)
 static void virtual_output_destroy(void *data)
 {
 	output_running = false;
+	audio_running = false;
 	virtual_out_data *out_data = (virtual_out_data*)data;
 	if (out_data) {
 		pthread_mutex_destroy(&out_data->mutex);
@@ -98,23 +100,26 @@ static bool virtual_output_start(void *data)
 		out_data->video_mode, fmt, out_data->width, out_data->height,
 		interval, out_data->delay + 10);
 
-	start &= shared_queue_create(&out_data->audio_queue, ModeAudio, fmt,
+	audio_running = shared_queue_create(&out_data->audio_queue, ModeAudio, fmt,
 		AUDIO_SIZE, 1, interval, video_frame_to_audio_frame(fps, 
 		out_data->delay + 10, 44100 * 4, AUDIO_SIZE));
 
 	if (start) {
-		struct audio_convert_info conv = {};
-		conv.format = AUDIO_FORMAT_16BIT;
-		conv.samples_per_sec = 44100;
-		conv.speakers = SPEAKERS_STEREO;
-		obs_output_set_audio_conversion(out_data->output, &conv);
 
-		init_flip_filter(&out_data->flip_ctx, out_data->width, 
+		init_flip_filter(&out_data->flip_ctx, out_data->width,
 			out_data->height, fmt);
 		output_running = true;
 		shared_queue_set_delay(&out_data->video_queue, out_data->delay);
 		shared_queue_set_delay(&out_data->audio_queue, out_data->delay);
 		start = obs_output_begin_data_capture(out_data->output, 0);
+
+		if (audio_running) {
+			struct audio_convert_info conv = {};
+			conv.format = AUDIO_FORMAT_16BIT;
+			conv.samples_per_sec = 44100;
+			conv.speakers = SPEAKERS_STEREO;
+			obs_output_set_audio_conversion(out_data->output, &conv);
+		}
 	} else {
 		output_running = false;
 		virtual_signal_stop("stop", true);
@@ -136,6 +141,7 @@ static void virtual_output_stop(void *data, uint64_t ts)
 	shared_queue_write_close(&out_data->audio_queue);
 	virtual_signal_stop("stop", false);
 	output_running = false;
+	audio_running = false;
 }
 
 static void virtual_video(void *param, struct video_data *frame)
@@ -161,7 +167,7 @@ static void virtual_video(void *param, struct video_data *frame)
 
 static void virtual_audio(void *param, struct audio_data *frame)
 {
-	if (!output_running)
+	if (!audio_running)
 		return;
 
 	virtual_out_data *out_data = (virtual_out_data*)param;
@@ -239,7 +245,6 @@ void virtual_output_terminate()
 void virtual_output_enable()
 {
 	obs_output_start(virtual_out);
-	output_running = true;
 }
 
 void virtual_output_disable()
