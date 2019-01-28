@@ -170,6 +170,7 @@ static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
 			AV_PIX_FMT_BGRA, filter->base_width, filter->base_height, interval,
 			filter->delay + 10);
 	} else {
+		blog(LOG_WARNING, "virtual-filter target size error");
 		filter->active = false;
 	}
 
@@ -179,6 +180,11 @@ static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
 		obs_property_set_visible(stop, true);
 		shared_queue_set_delay(&filter->video_queue, filter->delay);
 		obs_add_main_render_callback(virtual_filter_video, data);
+		blog(LOG_INFO, "starting virtual-filter on VirtualCam'%d'",
+			filter->mode + 1);
+	} else {
+		blog(LOG_WARNING, "starting virtual-filter failed on VirtualCam'%d'",
+			filter->mode + 1);
 	}
 
 	return filter->active;
@@ -194,6 +200,7 @@ static bool virtual_filter_stop(obs_properties_t *props, obs_property_t *p,
 	filter->active = false;
 	obs_property_set_visible(p, false);
 	obs_property_set_visible(start, true);
+	blog(LOG_INFO, "virtual-filter stop");
 	return true;
 }
 

@@ -106,8 +106,11 @@ static bool virtual_output_start(void *data)
 
 	if (start) {
 
-		init_flip_filter(&out_data->flip_ctx, out_data->width,
-			out_data->height, fmt);
+		if (!init_flip_filter(&out_data->flip_ctx, out_data->width,
+			out_data->height, fmt)) {
+			blog(LOG_WARNING, "avfilter hflip init failed");
+		}
+
 		output_running = true;
 		shared_queue_set_delay(&out_data->video_queue, out_data->delay);
 		shared_queue_set_delay(&out_data->audio_queue, out_data->delay);
@@ -120,11 +123,18 @@ static bool virtual_output_start(void *data)
 			conv.speakers = SPEAKERS_STEREO;
 			obs_output_set_audio_conversion(out_data->output, &conv);
 		}
+
+		blog(LOG_INFO, "starting virtual-output on VirtualCam'%d'", 
+			out_data->video_mode + 1);
+
 	} else {
 		output_running = false;
 		virtual_signal_stop("stop", true);
 		shared_queue_write_close(&out_data->video_queue);
-		shared_queue_write_close(&out_data->audio_queue);		
+		shared_queue_write_close(&out_data->audio_queue);	
+
+		blog(LOG_WARNING, "starting virtual-output failed on VirtualCam'%d'",
+			out_data->video_mode + 1);
 	}
 
 	return start;
@@ -142,6 +152,8 @@ static void virtual_output_stop(void *data, uint64_t ts)
 	virtual_signal_stop("stop", false);
 	output_running = false;
 	audio_running = false;
+
+	blog(LOG_INFO, "virtual-output stop");
 }
 
 static void virtual_video(void *param, struct video_data *frame)
@@ -152,7 +164,7 @@ static void virtual_video(void *param, struct video_data *frame)
 	virtual_out_data *out_data = (virtual_out_data*)param;
 	out_data->last_video_ts = frame->timestamp;
 	pthread_mutex_lock(&out_data->mutex);
-	if (out_data->hori_flip) {
+	if (out_data->hori_flip && out_data->flip_ctx.init) {
 		flip_frame(&out_data->flip_ctx, frame->data, frame->linesize);
 		shared_queue_push_video(&out_data->video_queue, 
 			(uint32_t*)out_data->flip_ctx.frame_out->linesize, out_data->width,
