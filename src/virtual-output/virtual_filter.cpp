@@ -58,16 +58,21 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 	obs_source_t* target = obs_filter_get_target(filter->context);
 	uint8_t* video_data;
 	uint32_t linesize;
-	uint32_t width = obs_source_get_base_width(target);
-	uint32_t height = obs_source_get_base_height(target);
+	uint32_t width = obs_source_get_width(target);
+	uint32_t height = obs_source_get_height(target);
 	uint64_t time = os_gettime_ns();
 	struct vec4 background;
 
-	if (!target || width == 0 || height == 0)
+	if (!target)
 		return;
 
 	width = min(filter->base_width, width);
 	height = min(filter->base_height, height);
+
+	if (width == 0 || height == 0) {
+		width = filter->base_width;
+		height = filter->base_height;
+	}
 
 	gs_texrender_reset(filter->texrender);
 
@@ -154,14 +159,19 @@ static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
 	obs_get_video_info(&ovi);
 	base_width = obs_source_get_base_width(target);
 	base_height = obs_source_get_base_height(target);
-	filter->base_width = max(ovi.base_width, base_width);
-	filter->base_height = max(ovi.base_height, base_height);
-	filter->width = 0;
-	filter->height = 0;
-	interval = (uint64_t)ovi.fps_den * 1000000000ULL / (uint64_t)ovi.fps_num;
-	filter->active = shared_queue_create(&filter->video_queue, filter->mode, 
-		AV_PIX_FMT_BGRA, filter->base_width, filter->base_height, interval, 
-		filter->delay + 10);
+
+	if (base_width > 0 && base_height > 0) {
+		filter->base_width = max(ovi.base_width, base_width);
+		filter->base_height = max(ovi.base_height, base_height);
+		filter->width = 0;
+		filter->height = 0;
+		interval = (uint64_t)ovi.fps_den * 1000000000ULL / (uint64_t)ovi.fps_num;
+		filter->active = shared_queue_create(&filter->video_queue, filter->mode,
+			AV_PIX_FMT_BGRA, filter->base_width, filter->base_height, interval,
+			filter->delay + 10);
+	} else {
+		filter->active = false;
+	}
 
 	if (filter->active) {
 		obs_property_t *stop = obs_properties_get(props, S_STOP);
