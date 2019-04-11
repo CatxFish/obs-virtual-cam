@@ -52,7 +52,7 @@ static void *virtual_filter_create(obs_data_t *settings, obs_source_t *context)
 	return data;
 }
 
-static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
+static void virtual_filter_video(void *param, float seconds)
 {
 	virtual_filter_data* filter = (virtual_filter_data*)param;
 	obs_source_t* target = obs_filter_get_target(filter->context);
@@ -74,10 +74,14 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 		height = filter->base_height;
 	}
 
+	obs_enter_graphics();
+
 	gs_texrender_reset(filter->texrender);
 
-	if (!gs_texrender_begin(filter->texrender, width, height))
+	if (!gs_texrender_begin(filter->texrender, width, height)) {
+		obs_leave_graphics();
 		return;
+	}
 
 	vec4_zero(&background);
 	gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
@@ -111,8 +115,8 @@ static void virtual_filter_video(void *param, uint32_t cx, uint32_t cy)
 		&video_data, time);
 	gs_stagesurface_unmap(filter->stagesurface);
 
-	UNUSED_PARAMETER(cx);
-	UNUSED_PARAMETER(cy);
+	obs_leave_graphics();
+
 }
 
 
@@ -120,7 +124,7 @@ static void virtual_filter_destroy(void *data)
 {
 	virtual_filter_data *filter = (virtual_filter_data *)data;
 	if (filter) {
-		obs_remove_main_render_callback(virtual_filter_video, data);
+		obs_remove_tick_callback(virtual_filter_video, data);
 		shared_queue_write_close(&filter->video_queue);
 		obs_enter_graphics();
 		gs_stagesurface_destroy(filter->stagesurface);
@@ -179,7 +183,7 @@ static bool virtual_filter_start(obs_properties_t *props, obs_property_t *p,
 		obs_property_set_visible(p, false);
 		obs_property_set_visible(stop, true);
 		shared_queue_set_delay(&filter->video_queue, filter->delay);
-		obs_add_main_render_callback(virtual_filter_video, data);
+		obs_add_tick_callback(virtual_filter_video, data);
 		blog(LOG_INFO, "starting virtual-filter on VirtualCam'%d'",
 			filter->mode + 1);
 	} else {
@@ -194,7 +198,7 @@ static bool virtual_filter_stop(obs_properties_t *props, obs_property_t *p,
 	void *data)
 {
 	virtual_filter_data* filter = (virtual_filter_data*)data;
-	obs_remove_main_render_callback(virtual_filter_video, data);
+	obs_remove_tick_callback(virtual_filter_video, data);
 	shared_queue_write_close(&filter->video_queue);
 	obs_property_t *start = obs_properties_get(props, S_START);
 	filter->active = false;
