@@ -7,43 +7,17 @@
     <x>0</x>
     <y>0</y>
     <width>428</width>
-    <height>399</height>
+    <height>423</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>VirtualCam</string>
   </property>
-  <widget class="QPushButton" name="pushButtonStart">
-   <property name="geometry">
-    <rect>
-     <x>230</x>
-     <y>360</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>StartOutput</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButtonStop">
-   <property name="geometry">
-    <rect>
-     <x>320</x>
-     <y>360</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>StopOutput</string>
-   </property>
-  </widget>
   <widget class="QGroupBox" name="groupBox_delay">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>250</y>
+     <y>260</y>
      <width>381</width>
      <height>71</height>
     </rect>
@@ -51,46 +25,46 @@
    <property name="title">
     <string>DelayFrame</string>
    </property>
-   <widget class="QSpinBox" name="spinBox">
-    <property name="geometry">
-     <rect>
-      <x>330</x>
-      <y>30</y>
-      <width>41</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>0</number>
-    </property>
-    <property name="maximum">
-     <number>30</number>
-    </property>
-    <property name="value">
-     <number>3</number>
-    </property>
-   </widget>
-   <widget class="QSlider" name="horizontalSlider">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>20</x>
       <y>30</y>
-      <width>281</width>
-      <height>20</height>
+      <width>341</width>
+      <height>22</height>
      </rect>
     </property>
-    <property name="minimum">
-     <number>0</number>
-    </property>
-    <property name="maximum">
-     <number>30</number>
-    </property>
-    <property name="value">
-     <number>3</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QSlider" name="horizontalSlider">
+       <property name="minimum">
+        <number>0</number>
+       </property>
+       <property name="maximum">
+        <number>30</number>
+       </property>
+       <property name="value">
+        <number>3</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="spinBox">
+       <property name="minimum">
+        <number>0</number>
+       </property>
+       <property name="maximum">
+        <number>30</number>
+       </property>
+       <property name="value">
+        <number>3</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QGroupBox" name="groupBox_option">
@@ -105,44 +79,38 @@
    <property name="title">
     <string>Option</string>
    </property>
-   <widget class="QCheckBox" name="checkBox_auto">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>20</x>
       <y>30</y>
       <width>341</width>
-      <height>20</height>
+      <height>101</height>
      </rect>
     </property>
-    <property name="text">
-     <string>AutoStart</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="checkBox_horiflip">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>60</y>
-      <width>341</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>HorizontalFlip</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="checkBox_keepratio">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>90</y>
-      <width>341</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>KeepAspectRatio</string>
-    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QCheckBox" name="checkBox_auto">
+       <property name="text">
+        <string>AutoStart</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBox_horiflip">
+       <property name="text">
+        <string>HorizontalFlip</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBox_keepratio">
+       <property name="text">
+        <string>KeepAspectRatio</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QGroupBox" name="groupBox_target">
@@ -151,7 +119,7 @@
      <x>20</x>
      <y>180</y>
      <width>381</width>
-     <height>61</height>
+     <height>71</height>
     </rect>
    </property>
    <property name="title">
@@ -161,10 +129,19 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>20</y>
+      <y>30</y>
       <width>341</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="sizeAdjustPolicy">
+     <enum>QComboBox::AdjustToMinimumContentsLength</enum>
     </property>
    </widget>
   </widget>
@@ -172,7 +149,7 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>330</y>
+     <y>340</y>
      <width>371</width>
      <height>20</height>
     </rect>
@@ -180,6 +157,74 @@
    <property name="text">
     <string>StartFailed</string>
    </property>
+  </widget>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>372</y>
+     <width>171</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetDefaultConstraint</enum>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QPushButton" name="pushButtonStart">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>StartOutput</string>
+      </property>
+      <property name="default">
+       <bool>true</bool>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="pushButtonStop">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>StopOutput</string>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>16</width>
+        <height>16</height>
+       </size>
+      </property>
+      <property name="autoDefault">
+       <bool>true</bool>
+      </property>
+      <property name="default">
+       <bool>true</bool>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
