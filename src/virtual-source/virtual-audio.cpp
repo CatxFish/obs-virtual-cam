@@ -7,6 +7,7 @@
 #include <dvdmedia.h>
 #include <commctrl.h>
 #include "virtual-audio.h"
+#include "clock.h"
 
 CUnknown * WINAPI CVAudio::CreateInstance(LPUNKNOWN lpunk, HRESULT *phr)
 {
@@ -85,6 +86,11 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 	if (!queue.hwnd)
 		shared_queue_open(&queue, ModeAudio);
 
+	if (prev_end_ts <= 0)
+		prev_end_ts = get_current_time();
+
+	sleepto(prev_end_ts);
+
 	while (queue.header && !get_sample){
 
 		if (get_times > 20 || queue.header->state != OutputReady)
@@ -120,16 +126,10 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 		dshow_start_ts = 0;
 	}
 
-	if (prev_end_ts != start_time)
-		int a = 0;
-
 	REFERENCE_TIME duration = (REFERENCE_TIME)10000000 * size / 
 		(REFERENCE_TIME)SAMPLE_SIZE;
 	end_time = start_time + duration;
 	prev_end_ts = end_time;
-	
-
-
 	pms->SetTime(&start_time, &end_time);
 	pms->SetSyncPoint(TRUE);
 	return NOERROR;

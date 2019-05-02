@@ -7,6 +7,7 @@ set(virtualsource_SOURCES
 	dllmain.cpp
 	virtual-cam.cpp
 	virtual-audio.cpp
+	clock.cpp
 	virtua-source.def
 	../queue/share_queue_read.cpp
 	)
@@ -14,6 +15,7 @@ set(virtualsource_SOURCES
 set(virtualsource_HEADERS
 	virtual-cam.h
 	virtual-audio.h
+	clock.h
 	../queue/share_queue_read.h
 	../queue/share_queue.h
 	)

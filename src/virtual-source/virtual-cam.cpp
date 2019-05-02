@@ -4,6 +4,7 @@
 #include <dvdmedia.h>
 #include <commctrl.h>
 #include "virtual-cam.h"
+#include "clock.h"
 
 #define MIN_WIDTH 320
 #define MIN_HEIGHT 240
@@ -158,7 +159,10 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 			Sleep(5);
 			get_times++;
 		}
-	} 
+	}
+
+	if (prev_end_ts <= 0) 
+		prev_end_ts = get_current_time();
 	
 	if (get_sample && !obs_start_ts) {
 		obs_start_ts = timestamp;
@@ -170,6 +174,7 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 		duration = time_perframe;
 	} else {
 		int size = pms->GetActualDataLength();
+		sleepto(prev_end_ts);
 		memset(dst, 127, size);
 		start_time = prev_end_ts;
 		duration = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
