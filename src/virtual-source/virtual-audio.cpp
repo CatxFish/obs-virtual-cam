@@ -68,6 +68,16 @@ HRESULT CVAudioStream::QueryInterface(REFIID riid, void **ppv)
 	return S_OK;
 }
 
+void CVAudioStream::SetTimeout()
+{
+	if (queue.header) {
+		sync_timeout = queue.header->queue_length * AUDIO_SIZE * 10000000 / 44100 * 4;
+	}
+	else {
+		sync_timeout = 10000000;
+	}
+}
+
 
 HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 {
@@ -76,6 +86,7 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 	uint8_t* dst;
 	uint32_t size = 0;
 	uint32_t get_times = 0;
+	uint64_t current_time = 0;
 	uint64_t timestamp = 0;	
 	REFERENCE_TIME start_time = 0;
 	REFERENCE_TIME end_time = 0;
@@ -83,11 +94,23 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 
 	hr = pms->GetPointer((BYTE**)&dst);
 
+	current_time = get_current_time();
+
+	if (prev_end_ts <= 0)
+		prev_end_ts = current_time;
+
 	if (!queue.hwnd)
 		shared_queue_open(&queue, ModeAudio);
 
-	if (prev_end_ts <= 0)
-		prev_end_ts = get_current_time();
+	if (sync_timeout <= 0) {
+		SetTimeout();
+	}
+	else if (current_time - prev_end_ts > sync_timeout) {
+		if (queue.header)
+			share_queue_init_index(&queue);
+		else
+			prev_end_ts = current_time;
+	}
 
 	sleepto(prev_end_ts);
 

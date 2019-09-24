@@ -113,6 +113,17 @@ void CVCamStream::SetConvertContext()
 	scale_info.dst_linesize[0] = pvi->bmiHeader.biWidth * 2;
 }
 
+void CVCamStream::SetTimeout()
+{
+	if (queue.header) {
+		sync_timeout = queue.header->queue_length *  
+			queue.header->frame_time / 100;
+	}
+	else {
+		sync_timeout = 10 * ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
+	}
+}
+
 HRESULT CVCamStream::QueryInterface(REFIID riid, void **ppv)
 {
 	if (riid == _uuidof(IAMStreamConfig))
@@ -132,19 +143,35 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 	bool get_sample = false;
 	int get_times = 0;
 	uint64_t timestamp = 0;
+	uint64_t current_time = 0;
 	REFERENCE_TIME start_time = 0;
 	REFERENCE_TIME end_time = 0;
 	REFERENCE_TIME duration = 0;
 
 	hr = pms->GetPointer((BYTE**)&dst);
 
+	current_time = get_current_time();
+
+	if (prev_end_ts <= 0)
+		prev_end_ts = current_time;
+
 	if (!queue.hwnd) {
 		if (shared_queue_open(&queue, queue_mode)) {
 			shared_queue_get_video_format(queue_mode, &format, &frame_width,
 				&frame_height, &time_perframe);
 			SetConvertContext();
-			reset_mode = false;
+			sync_timeout = 0;
 		}
+	}
+
+	if (sync_timeout <= 0) {
+		SetTimeout();
+	}
+	else if (current_time - prev_end_ts > sync_timeout) {
+		if(queue.header) 
+			share_queue_init_index(&queue);
+		else
+			prev_end_ts = current_time;
 	}
 
 	while (queue.header && !get_sample) {
@@ -160,9 +187,6 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 			get_times++;
 		}
 	}
-
-	if (prev_end_ts <= 0) 
-		prev_end_ts = get_current_time();
 	
 	if (get_sample && !obs_start_ts) {
 		obs_start_ts = timestamp;
@@ -180,11 +204,11 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 		duration = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
 	}
 
-	if (queue.header && queue.header->state == OutputStop || reset_mode || 
-		get_times > 20) {
+	if (queue.header && queue.header->state == OutputStop || get_times > 20) {
 		shared_queue_read_close(&queue, &scale_info);
 		dshow_start_ts = 0;
 		obs_start_ts = 0;
+		sync_timeout = 0;
 	}
 
 	end_time = start_time + duration;

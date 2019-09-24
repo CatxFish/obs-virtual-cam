@@ -95,16 +95,18 @@ public:
 	HRESULT OnThreadCreate(void);
 	HRESULT OnThreadDestroy(void);
 	HRESULT ChangeMediaType(int nMediatype);
-	HRESULT ResetQueue();
 	HRESULT Stop(void);
 	HRESULT Pause(void);
 
 
 private:
+	void SetTimeout();
+
 	CVAudio *parent;
 	share_queue queue;
 	uint64_t obs_start_ts = 0;
 	uint64_t dshow_start_ts = 0;
+	uint64_t sync_timeout = 0;
 	REFERENCE_TIME  prev_end_ts = 0;
 	ALLOCATOR_PROPERTIES alloc_prop;
 
