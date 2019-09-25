@@ -125,6 +125,7 @@ private:
 	uint64_t obs_start_ts = 0;
 	uint64_t dshow_start_ts = 0;
 	uint64_t time_perframe = 0;
+	uint64_t system_start_time = 0;
 	uint64_t sync_timeout = 0;
 	REFERENCE_TIME  prev_end_ts = 0;
 

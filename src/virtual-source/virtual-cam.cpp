@@ -150,10 +150,11 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 
 	hr = pms->GetPointer((BYTE**)&dst);
 
-	current_time = get_current_time();
-
-	if (prev_end_ts <= 0)
-		prev_end_ts = current_time;
+	if (system_start_time <= 0) 
+		system_start_time = get_current_time();
+	else 
+		current_time = get_current_time() - system_start_time;
+	
 
 	if (!queue.hwnd) {
 		if (shared_queue_open(&queue, queue_mode)) {
@@ -166,6 +167,9 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 
 	if (sync_timeout <= 0) {
 		SetTimeout();
+	}
+	else if (prev_end_ts >current_time) {
+		sleepto(prev_end_ts);
 	}
 	else if (current_time - prev_end_ts > sync_timeout) {
 		if(queue.header) 
@@ -198,7 +202,6 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 		duration = time_perframe;
 	} else {
 		int size = pms->GetActualDataLength();
-		sleepto(prev_end_ts);
 		memset(dst, 127, size);
 		start_time = prev_end_ts;
 		duration = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
@@ -349,6 +352,7 @@ HRESULT CVCamStream::OnThreadCreate()
 	prev_end_ts = 0;
 	obs_start_ts = 0;
 	dshow_start_ts = 0;
+	system_start_time = 0;
 	return NOERROR;
 }
 

@@ -94,10 +94,10 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 
 	hr = pms->GetPointer((BYTE**)&dst);
 
-	current_time = get_current_time();
-
-	if (prev_end_ts <= 0)
-		prev_end_ts = current_time;
+	if (system_start_time <= 0)
+		system_start_time = get_current_time();
+	else
+		current_time = get_current_time() - system_start_time;
 
 	if (!queue.hwnd)
 		shared_queue_open(&queue, ModeAudio);
@@ -105,14 +105,15 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 	if (sync_timeout <= 0) {
 		SetTimeout();
 	}
+	else if (prev_end_ts >current_time) {
+		sleepto(prev_end_ts);
+	}
 	else if (current_time - prev_end_ts > sync_timeout) {
 		if (queue.header)
 			share_queue_init_index(&queue);
 		else
 			prev_end_ts = current_time;
 	}
-
-	sleepto(prev_end_ts);
 
 	while (queue.header && !get_sample){
 
@@ -126,7 +127,6 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 			get_times++;
 		}
 	}
-
 
 	if (get_sample && !obs_start_ts){
 		obs_start_ts = timestamp;
@@ -253,6 +253,7 @@ HRESULT CVAudioStream::OnThreadCreate()
 	obs_start_ts = 0;
 	dshow_start_ts = 0;
 	prev_end_ts = 0;
+	system_start_time = 0;
 	return NOERROR;
 } 
 
