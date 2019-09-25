@@ -10,8 +10,8 @@ bool init_flip_filter(FlipContext* ctx,int width, int height, int format)
 
 	avfilter_register_all();
 
-	AVFilter *buffersrc = avfilter_get_by_name("buffer");
-	AVFilter *buffersink = avfilter_get_by_name("buffersink");
+	const AVFilter *buffersrc = avfilter_get_by_name("buffer");
+	const AVFilter *buffersink = avfilter_get_by_name("buffersink");
 	AVFilterInOut *outputs = avfilter_inout_alloc();
 	AVFilterInOut *inputs = avfilter_inout_alloc();
 	enum AVPixelFormat pix_fmts[] = { (AVPixelFormat)format, AV_PIX_FMT_NONE };
