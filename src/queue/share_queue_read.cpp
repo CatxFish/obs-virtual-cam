@@ -54,10 +54,10 @@ bool share_queue_init_index(share_queue* q)
 
 	} else if (q->mode == ModeAudio) {
 		int write_index = q->header->write_index;
-		int delay_frame = q->header->delay_frame;
+		int delay_frame = max(q->header->delay_frame, 3);
 		int64_t frame_time = q->header->frame_time;
 		int64_t last_ts = q->header->last_ts;
-		uint64_t start_ts = last_ts - delay_frame*frame_time;
+		uint64_t start_ts = last_ts - frame_time * delay_frame;
 
 		int index = write_index;
 		uint64_t frame_ts = 0;

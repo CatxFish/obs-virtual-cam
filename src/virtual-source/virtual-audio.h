@@ -4,13 +4,11 @@
 
 #define DECLARE_PTR(type, ptr, expr) type* ptr = (type*)(expr);
 
-#define AUDIO_BUFFER_SIZE 5880     
+#define AUDIO_BUFFER_SIZE 4096  
 #define SAMPLE_RATE 44100
 #define SAMPLE_SIZE 176400
 
 EXTERN_C const GUID CLSID_OBS_VirtualA;
-
-static void Log(char* msg);
 
 class CVAudioStream;
 class CVAudio : public CSource, public  IAMFilterMiscFlags

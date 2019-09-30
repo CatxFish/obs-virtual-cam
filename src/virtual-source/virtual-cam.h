@@ -108,7 +108,8 @@ private:
 	bool ListSupportFormat(void);
 	bool CheckObsSetting(void);
 	bool ValidateResolution(long width, long height);
-	void SetTimeout();
+	void SetSyncTimeout();
+	void SetGetTimeout();
 	void SetConvertContext(void);
 
 	CVCam *parent;
@@ -119,6 +120,7 @@ private:
 	bool reset_mode = false;
 	int queue_mode = 0;
 	int format = 0;
+	int get_timeout = 20;
 	uint8_t* dst;
 	uint32_t frame_width = 0;
 	uint32_t frame_height = 0;

@@ -12,6 +12,7 @@
 #define MAX_HEIGHT 3072
 #define MAX_FRAMETIME 1000000
 #define MIN_FRAMETIME 166666
+#define SLEEP_DURATION 5
 
 
 CUnknown * WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT *phr)
@@ -113,15 +114,21 @@ void CVCamStream::SetConvertContext()
 	scale_info.dst_linesize[0] = pvi->bmiHeader.biWidth * 2;
 }
 
-void CVCamStream::SetTimeout()
+void CVCamStream::SetSyncTimeout()
 {
 	if (queue.header) {
-		sync_timeout = queue.header->queue_length *  
+		sync_timeout = queue.header->queue_length *
 			queue.header->frame_time / 100;
 	}
 	else {
 		sync_timeout = 10 * ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
 	}
+
+}
+
+void CVCamStream::SetGetTimeout()
+{
+	get_timeout = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame * 3 / (SLEEP_DURATION * 10000);
 }
 
 HRESULT CVCamStream::QueryInterface(REFIID riid, void **ppv)
@@ -153,7 +160,7 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 	if (system_start_time <= 0) 
 		system_start_time = get_current_time();
 	else 
-		current_time = get_current_time() - system_start_time;
+		current_time = get_current_time(system_start_time);
 	
 
 	if (!queue.hwnd) {
@@ -161,15 +168,16 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 			shared_queue_get_video_format(queue_mode, &format, &frame_width,
 				&frame_height, &time_perframe);
 			SetConvertContext();
+			SetGetTimeout();
 			sync_timeout = 0;
 		}
 	}
 
 	if (sync_timeout <= 0) {
-		SetTimeout();
+		SetSyncTimeout();
 	}
 	else if (prev_end_ts >current_time) {
-		sleepto(prev_end_ts);
+		sleepto(prev_end_ts, system_start_time);
 	}
 	else if (current_time - prev_end_ts > sync_timeout) {
 		if(queue.header) 
@@ -180,14 +188,14 @@ HRESULT CVCamStream::FillBuffer(IMediaSample *pms)
 
 	while (queue.header && !get_sample) {
 
-		if (get_times > 20 || queue.header->state != OutputReady)
+		if (get_times >= get_timeout || queue.header->state != OutputReady)
 			break;
 
 		get_sample = shared_queue_get_video(&queue, &scale_info, dst, 
 			&timestamp);
 
 		if (!get_sample) {
-			Sleep(5);
+			Sleep(SLEEP_DURATION);
 			get_times++;
 		}
 	}
