@@ -140,6 +140,9 @@ bool shared_queue_push_audio(share_queue* q, uint32_t size,
 	int offset = q->header->header_size +
 		(q->header->element_size) * q->index;
 
+	q->header->write_index = q->index;
+	q->header->last_ts = video_ts;
+
 	uint8_t* buff = (uint8_t*)q->header + offset;
 	frame_header* head = (frame_header*)buff;
 	uint8_t* data = (uint8_t*)buff + q->header->element_header_size;
@@ -147,8 +150,6 @@ bool shared_queue_push_audio(share_queue* q, uint32_t size,
 	head->linesize[0] = size;
 	head->timestamp = timestamp;
 
-	q->header->last_ts = video_ts;
-	q->header->write_index = q->index;
 	q->index++;
 
 	if (q->index >= q->header->queue_length) {

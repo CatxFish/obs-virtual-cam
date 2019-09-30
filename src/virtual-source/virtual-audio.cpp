@@ -90,14 +90,12 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 	uint64_t timestamp = 0;
 	REFERENCE_TIME start_time = 0;
 	REFERENCE_TIME end_time = 0;
-	long a = 0;
 
 
 	hr = pms->GetPointer((BYTE**)&dst);
 
 	if (system_start_time <= 0) {
 		system_start_time = get_current_time();
-		a = pms->GetActualDataLength();
 	}
 	else
 		current_time = get_current_time(system_start_time);
@@ -107,6 +105,9 @@ HRESULT CVAudioStream::FillBuffer(IMediaSample *pms)
 
 	if (sync_timeout <= 0) {
 		SetTimeout();
+	}
+	else if(current_time < prev_end_ts)
+	{
 	}
 	else if (current_time - prev_end_ts > sync_timeout) {
 		if (queue.header)

@@ -114,7 +114,7 @@ static bool virtual_output_start(void *data)
 		output_running = true;
 		shared_queue_set_delay(&out_data->video_queue, out_data->delay);
 		shared_queue_set_delay(&out_data->audio_queue, out_data->delay);
-		start = obs_output_begin_data_capture(out_data->output, 0);
+		
 
 		if (audio_running) {
 			struct audio_convert_info conv = {};
@@ -123,6 +123,8 @@ static bool virtual_output_start(void *data)
 			conv.speakers = SPEAKERS_STEREO;
 			obs_output_set_audio_conversion(out_data->output, &conv);
 		}
+
+		start = obs_output_begin_data_capture(out_data->output, 0);
 
 		blog(LOG_INFO, "starting virtual-output on VirtualCam'%d'", 
 			out_data->video_mode + 1);
