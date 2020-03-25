@@ -1,5 +1,5 @@
 # OBS-VirtualCam
-OBS-Virtualcam is a plugin for obs-studio , transforming the output video to a virtual directshow device.
+OBS-VirtualCam is a plugin for obs-studio , transforming the output video to a virtual directshow device.
 
 **Supported Platforms** : Windows 7 , Windows 8 and Windows 10
 
