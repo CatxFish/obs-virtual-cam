@@ -1,5 +1,5 @@
 # OBS-VirtualCam
-obs-virutalcam is a plugin for obs-studio , transforming the output video to a virtual directshow device.
+OBS-VirtualCam is a plugin for obs-studio , transforming the output video to a virtual directshow device.
 
 **Supported Platforms** : Windows 7 , Windows 8 and Windows 10
 
@@ -46,4 +46,4 @@ Set following Cmake variables:
 - **PTHREAD_LIB** (filepath): w32-pthread.lib path
 
 # Donate
-If you like my work on this plugin , you can donate via [Paypal.me](https://www.paypal.me/obsvirtualcam)
+If you like my work on this plugin, you can donate via [Paypal.me](https://www.paypal.me/obsvirtualcam)
