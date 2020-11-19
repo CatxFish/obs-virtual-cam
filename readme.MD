@@ -1,3 +1,7 @@
+| Notice: OBS-studio have officially provided virtual camera feature since version 26.0.0 , you can use it without this plugin |
+|-----------------------------------------|
+
+
 # OBS-VirtualCam
 OBS-VirtualCam is a plugin for obs-studio , transforming the output video to a virtual directshow device.
 
