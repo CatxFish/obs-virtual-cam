@@ -1,5 +1,4 @@
-| Notice: OBS-studio have officially provided virtual camera feature since version 26.0.0 , you can use it without this plugin |
-|-----------------------------------------|
+- Notice: obs-studio have officially provided virtual camera feature since version 26.0.0 , you can use it without installing this plugin 
 
 
 # OBS-VirtualCam
@@ -8,6 +7,8 @@ OBS-VirtualCam is a plugin for obs-studio , transforming the output video to a v
 **Supported Platforms** : Windows 7 , Windows 8 and Windows 10
 
 **Alternative for Linux users:** [CatxFish/obs-v4l2sink](https://github.com/CatxFish/obs-v4l2sink)
+
+**Alternative for Mac users:** [johnboiles/obs-mac-virtualcam](https://github.com/johnboiles/obs-mac-virtualcam)
 
 **Supported OBS Studio version** : 24.0.0+
 
